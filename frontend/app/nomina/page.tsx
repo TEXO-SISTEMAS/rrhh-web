@@ -25,6 +25,7 @@ const TABS = [
   { id: "distribucion", label: "Distribución", icon: "👥" },
   { id: "demografia",   label: "Demografía",   icon: "🌍" },
   { id: "brecha",       label: "Brecha",       icon: "📊" },
+  { id: "detalle",      label: "Detalle",      icon: "📋" },
 ];
 
 function fmt(n: number | null | undefined): string {
@@ -485,22 +486,11 @@ export default function NominaPage() {
         </div>
       )}
 
-      {(() => {
-        const TAB_COLS: Record<string, string[]> = {
-          distribucion: ["EMPRESA", "TIPO_EMPRESA", "NOMBRE", "SEXO", "LIDER", "SECCION", "NIVEL_AIC"],
-          demografia:   ["EMPRESA", "NOMBRE", "GENERACION", "EDAD", "FECHA_NACIMIENTO", "NACIONALIDAD"],
-          brecha:       ["EMPRESA", "TIPO_EMPRESA", "NOMBRE", "GENERACION", "ANTIGUEDAD_ANOS", "FECHA_INGRESO"],
-        };
-        const cols = TAB_COLS[tab] ?? Object.keys(rawRows[0] ?? {});
-        const tableRows = rawRows.map((r) =>
-          Object.fromEntries(cols.filter((c) => c in r).map((c) => [c, r[c]]))
-        );
-        return (
-          <div className="mt-6">
-            <DataTable rows={tableRows} title="Detalle de Nómina" />
-          </div>
-        );
-      })()}
+      {tab === "detalle" && (
+        <div className="mt-2">
+          <DataTable rows={filteredRows} title="Detalle de Nómina" />
+        </div>
+      )}
     </div>
   );
 }
