@@ -13,6 +13,22 @@ VALID_MODULES = {"nomina", "rotacion", "costos", "reclutamiento", "respuestas"}
 SHARED_KEY = "shared"
 
 
+@router.get("/ping")
+def cache_ping():
+    import os
+    url = os.getenv("SUPABASE_URL", "")
+    key = os.getenv("SUPABASE_KEY", "")
+    if not url or not key:
+        return {"storage": "memory", "supabase": False}
+    try:
+        from services import data_cache
+        c = data_cache._get_client()
+        c.table("dashboard_cache").select("username").limit(1).execute()
+        return {"storage": "supabase", "supabase": True, "url": url[:40]}
+    except Exception as exc:
+        return {"storage": "error", "supabase": False, "error": str(exc)}
+
+
 @router.get("/{module}")
 def get_module(module: str):
     if module not in VALID_MODULES:
