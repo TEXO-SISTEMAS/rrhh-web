@@ -87,6 +87,8 @@ COL_MAP = {
     "MES_INGRESO": "MES_INGRESO",
     "ANO_INGRESO": "ANO_INGRESO", "AÑO_INGRESO": "ANO_INGRESO",
     "FECHA_INGRESO": "FECHA_INGRESO",
+    "FECHA_ANTIGUEDAD": "FECHA_ANTIGUEDAD", "FECHA_ANTIGÜEDAD": "FECHA_ANTIGUEDAD",
+    "FECHA ANTIGUEDAD": "FECHA_ANTIGUEDAD", "FECHA ANTIGÜEDAD": "FECHA_ANTIGUEDAD",
     "TIPO_DE_PAGO_IRP": "TIPO_PAGO",
     "MES_SALIDA": "MES_SALIDA",
     "ANO_SALIDA": "ANO_SALIDA", "AÑO_SALIDA": "ANO_SALIDA",
@@ -276,7 +278,7 @@ def normalizar_df(df_raw: pd.DataFrame, empresa_col: str, mes: int, ano: int) ->
                 "MOTIVO_SALIDA", "TIPO_SALIDA", "SECCION"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.upper().replace("NAN", np.nan)
-    for col in ["FECHA_INGRESO", "FECHA_SALIDA"]:
+    for col in ["FECHA_INGRESO", "FECHA_SALIDA", "FECHA_ANTIGUEDAD"]:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce")
     if "SALARIO" in df.columns:
@@ -284,8 +286,14 @@ def normalizar_df(df_raw: pd.DataFrame, empresa_col: str, mes: int, ano: int) ->
     df["MES_REPORTE"] = mes
     df["ANO_REPORTE"] = ano
     df["MES_NOMBRE"] = MESES_NOMBRE.get(mes, str(mes))
-    if "FECHA_INGRESO" in df.columns and "FECHA_SALIDA" in df.columns:
-        df["MESES_PERMANENCIA"] = ((df["FECHA_SALIDA"] - df["FECHA_INGRESO"])
+    # Permanencia: usa FECHA_ANTIGUEDAD si existe, sino FECHA_INGRESO
+    fecha_inicio = None
+    if "FECHA_ANTIGUEDAD" in df.columns:
+        fecha_inicio = df["FECHA_ANTIGUEDAD"]
+    elif "FECHA_INGRESO" in df.columns:
+        fecha_inicio = df["FECHA_INGRESO"]
+    if fecha_inicio is not None and "FECHA_SALIDA" in df.columns:
+        df["MESES_PERMANENCIA"] = ((df["FECHA_SALIDA"] - fecha_inicio)
                                    .dt.days / 30.44).round(1)
     return df
 
