@@ -857,34 +857,6 @@ export default function RotacionPage() {
               </ChartCard>
             )}
           </div>
-          {(topAreas.length > 0 || topDept.length > 0) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {topAreas.length > 0 && (
-                <ChartCard title="Top 10 Áreas con Más Rotación">
-                  <PlotChart
-                    light
-                    data={[{ type: "bar", orientation: "h",
-                      x: topAreas.map((r) => r.salidas), y: topAreas.map((r) => r.area),
-                      marker: { color: barColors(topAreas.length) } }]}
-                    layout={{ margin: { t: 16, r: 16, b: 36, l: 130 } }}
-                    height={Math.max(260, topAreas.length * 26)}
-                  />
-                </ChartCard>
-              )}
-              {topDept.length > 0 && (
-                <ChartCard title="Top 10 Departamentos con Más Rotación">
-                  <PlotChart
-                    light
-                    data={[{ type: "bar", orientation: "h",
-                      x: topDept.map((r) => r.salidas), y: topDept.map((r) => r.dept),
-                      marker: { color: barColors(topDept.length) } }]}
-                    layout={{ margin: { t: 16, r: 16, b: 36, l: 160 } }}
-                    height={Math.max(260, topDept.length * 26)}
-                  />
-                </ChartCard>
-              )}
-            </div>
-          )}
           {permHist.length > 0 && (
             <ChartCard title="Distribución de Permanencia al Momento de la Salida (meses)">
               <PlotChart
@@ -895,7 +867,7 @@ export default function RotacionPage() {
               />
             </ChartCard>
           )}
-          {topCargos.length === 0 && topAreas.length === 0 && (
+          {topCargos.length === 0 && (
             <p className="text-sm" style={{ color: "var(--text2)" }}>No hay datos de cargo o área disponibles en este archivo.</p>
           )}
         </div>
