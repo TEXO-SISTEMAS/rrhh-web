@@ -57,7 +57,7 @@ function computeFromRows(allRows: Row[]) {
   const permProm     = permArr.length ? Math.round((permArr.reduce((a, b) => a + b, 0) / permArr.length) * 10) / 10 : null;
   const tasa         = hcEnero > 0 ? Math.round(todasSalidas.length / hcEnero * 1000) / 10 : null;
 
-  const kpis = { tasa_anual: tasa, salidas_totales: salidas.length, empresas, voluntarias: vol, involuntarias: invol, permanencia_prom_meses: permProm };
+  const kpis = { tasa_anual: tasa, salidas_totales: todasSalidas.length, empresas, voluntarias: vol, involuntarias: invol, permanencia_prom_meses: permProm };
 
   const tipoSalida = (() => {
     const m = groupBy(salidas.filter((r) => r.TIPO_SALIDA && String(r.TIPO_SALIDA).toUpperCase() !== "NAN"), "TIPO_SALIDA");
@@ -78,7 +78,7 @@ function computeFromRows(allRows: Row[]) {
       byAnoMes[ano] = byAnoMes[ano] ?? {};
       byAnoMes[ano][mes] = byAnoMes[ano][mes] ?? { sal: 0, hc: 0 };
       byAnoMes[ano][mes].hc++;
-      if (isSalida(r)) byAnoMes[ano][mes].sal++;
+      if (isAnySalida(r)) byAnoMes[ano][mes].sal++;
     }
     const rows: AnyObj[] = [];
     for (const [ano, meses] of Object.entries(byAnoMes)) {
@@ -90,7 +90,7 @@ function computeFromRows(allRows: Row[]) {
     return rows.sort((a, b) => Number(a.ano) - Number(b.ano) || a.mes - b.mes);
   })();
 
-  const salEmp = Object.entries(groupBy(salidas, "EMPRESA"))
+  const salEmp = Object.entries(groupBy(todasSalidas, "EMPRESA"))
     .map(([EMPRESA, r]) => ({ EMPRESA, salidas: r.length }))
     .sort((a, b) => a.salidas - b.salidas);
 
@@ -101,7 +101,7 @@ function computeFromRows(allRows: Row[]) {
       if (!emp || !ano) continue;
       byEmpAno[emp] = byEmpAno[emp] ?? {};
       byEmpAno[emp][ano] = byEmpAno[emp][ano] ?? { sal: 0, hcEnero: 0 };
-      if (isSalida(r)) byEmpAno[emp][ano].sal++;
+      if (isAnySalida(r)) byEmpAno[emp][ano].sal++;
       if (Number(r.MES_REPORTE) === 1) byEmpAno[emp][ano].hcEnero++;
     }
     const rows: { empresa: string; tasa: number }[] = [];
@@ -436,7 +436,7 @@ export default function RotacionPage() {
   }));
 
   const tablaRot: AnyObj[]     = (data.tabla as AnyObj[]) ?? [];
-  const salidasFiltradas        = filteredRows.filter(isSalida);
+  const salidasFiltradas        = filteredRows.filter(isAnySalida);
 
   return (
     <div>
