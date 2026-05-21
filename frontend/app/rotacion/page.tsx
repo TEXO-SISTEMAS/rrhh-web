@@ -15,7 +15,6 @@ type AnyObj = Record<string, any>; // eslint-disable-line @typescript-eslint/no-
 const FILTER_CONFIGS: FilterConfig[] = [
   { label: "Empresa",     field: "EMPRESA" },
   { label: "Tipo Salida", field: "TIPO_SALIDA" },
-  { label: "Año",         field: "ANO_REPORTE" },
   { label: "Departamento", field: "DEPARTAMENTO" },
 ];
 
@@ -344,7 +343,7 @@ export default function RotacionPage() {
     if (rotacionData && !data) {
       setData(rotacionData);
       const rows = (rotacionData.raw_rows as Row[]) ?? [];
-      register(FILTER_CONFIGS, rows, defaultYear2025(rows, "ANO_REPORTE"));
+      register(FILTER_CONFIGS, rows.filter((r) => String(r.ANO_REPORTE ?? "") === "2025"), {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rotacionData]);
@@ -393,7 +392,7 @@ export default function RotacionPage() {
     );
   }
 
-  const rawRows: Row[]         = (data.raw_rows as Row[]) ?? [];
+  const rawRows: Row[]         = ((data.raw_rows as Row[]) ?? []).filter((r) => String(r.ANO_REPORTE ?? "") === "2025");
   const filteredRows            = applyFilters(rawRows, selected);
   const advertencias: string[] = (data.advertencias as string[]) ?? [];
   const computed = computeFromRows(filteredRows);

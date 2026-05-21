@@ -19,7 +19,6 @@ const FILTER_CONFIGS: FilterConfig[] = [
   { label: "Nivel AIC",     field: "NIVEL_AIC" },
   { label: "Tipo Salida",   field: "TIPO_SALIDA" },
   { label: "Motivo Salida", field: "MOTIVO_SALIDA" },
-  { label: "Año",           field: "ANO_SALIDA" },
 ];
 
 const CONCEPTOS: [string, string][] = [
@@ -217,7 +216,7 @@ export default function CostosPage() {
       setHojas((costosData.hojas as string[]) ?? []);
       setHojaActiva((costosData.hoja_activa as string) ?? "");
       const rows = (costosData.raw_rows as Row[]) ?? [];
-      register(FILTER_CONFIGS, rows, defaultYear2025(rows, "ANO_SALIDA"));
+      register(FILTER_CONFIGS, rows.filter((r) => String(r.ANO_SALIDA ?? "") === "2025"), {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [costosData]);
@@ -246,7 +245,7 @@ export default function CostosPage() {
       setActiveTab("agencia");
       setShowUpload(false);
       const rawRows = (json.raw_rows as Row[]) ?? [];
-      register(FILTER_CONFIGS, rawRows, defaultYear2025(rawRows, "ANO_SALIDA"));
+      register(FILTER_CONFIGS, rawRows.filter((r) => String(r.ANO_SALIDA ?? "") === "2025"), {});
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
@@ -343,7 +342,7 @@ export default function CostosPage() {
   }
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
-  const rawRows: Row[] = (data!.raw_rows as Row[]) ?? [];
+  const rawRows: Row[] = ((data!.raw_rows as Row[]) ?? []).filter((r) => String(r.ANO_SALIDA ?? "") === "2025");
   const filteredRows   = applyFilters(rawRows, selected);
   const { kpis, agSob, agSobDesc, agCant, agProm, composicion, compPorAgencia, tipoData, tipoProm, top10motivo, nivCosto, nivCant, nivSob, nivProm, nivComp, sobAno, liqAno, sobMensual, costoMensual } =
     computeFromRows(filteredRows);

@@ -16,7 +16,6 @@ const FILTER_CONFIGS: FilterConfig[] = [
   { label: "Agencia",    field: "AGENCIA" },
   { label: "Nivel",      field: "NIVEL" },
   { label: "Estado",     field: "SITUACION" },
-  { label: "Año",        field: "ANO" },
 ];
 
 const MESES: Record<number, string> = {
@@ -142,7 +141,7 @@ export default function ReclutamientoPage() {
     if (reclutamientoData && !data) {
       setData(reclutamientoData);
       const rows = (reclutamientoData.tabla as Row[]) ?? [];
-      register(FILTER_CONFIGS, rows, defaultYear2025(rows, "ANO"));
+      register(FILTER_CONFIGS, rows.filter((r) => String(r.ANO ?? "") === "2025"), {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reclutamientoData]);
@@ -152,7 +151,7 @@ export default function ReclutamientoPage() {
     setReclutamientoData(result);
     setShowUpload(false);
     const rows = (result.tabla as Row[]) ?? [];
-    register(FILTER_CONFIGS, rows, defaultYear2025(rows, "ANO"));
+    register(FILTER_CONFIGS, rows.filter((r) => String(r.ANO ?? "") === "2025"), {});
   }
 
   if (hydrating && !data) {
@@ -180,7 +179,7 @@ export default function ReclutamientoPage() {
     );
   }
 
-  const rawRows: Row[] = (data.tabla as Row[]) ?? [];
+  const rawRows: Row[] = ((data.tabla as Row[]) ?? []).filter((r) => String(r.ANO ?? "") === "2025");
   const filteredRows   = applyFilters(rawRows, selected);
   const { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno } =
     computeFromRows(filteredRows);
