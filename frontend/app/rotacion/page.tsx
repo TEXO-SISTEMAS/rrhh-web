@@ -514,7 +514,7 @@ export default function RotacionPage() {
                   data={[{ type: "pie", labels: tipoSalida.labels, values: tipoSalida.values, hole: 0.4,
                     textinfo: "label+percent", textposition: "outside",
                     textfont: { color: "#1e293b" },
-                    marker: { colors: tipoSalida.labels.map((l) => String(l).toUpperCase().includes("VOL") ? "#2563EB" : "#94a3b8") } }]}
+                    marker: { colors: tipoSalida.labels.map((l) => String(l).toUpperCase().includes("INV") ? "#94a3b8" : "#2563EB") } }]}
                   layout={{ margin: { t: 16, r: 16, b: 16, l: 16 } }}
                   height={300}
                 />
