@@ -473,10 +473,9 @@ export default function RotacionPage() {
   };
   const motivoEmpTraces   = motivosUnicos.map((motivo) => ({
     type: "bar" as const, name: motivo,
-    marker: { color: MOTIVO_COLOR[motivo] ?? C_GRAY },
     x: empresasMotivo,
     y: empresasMotivo.map((emp) => motivoEmp.find((r) => r.empresa === emp && r.motivo === motivo)?.n ?? 0),
-    marker: { color: LIGHT_COLOR_SEQ[i % LIGHT_COLOR_SEQ.length] },
+    marker: { color: MOTIVO_COLOR[motivo] ?? C_GRAY },
   }));
 
   const tiposUnicosAno = Array.from(new Set(tipoAno.map((r) => r.tipo)));
@@ -642,7 +641,7 @@ export default function RotacionPage() {
                   x: salEmp.map((r) => r.EMPRESA), y: salEmp.map((r) => r.salidas),
                   text: salEmp.map((r) => String(r.salidas)),
                   textposition: "outside" as const,
-                  marker: { color: barColors(salEmp.length) } }]}
+                  marker: { color: C_BLUE }, }]}
                 layout={{ margin: { t: 30, r: 16, b: 80, l: 40 } }}
                 height={280}
               />
@@ -658,7 +657,7 @@ export default function RotacionPage() {
                     name: "Nº de Ingresos",
                     x: rotTalento.map((r) => r.empresa),
                     y: rotTalento.map((r) => r.ingresos),
-                    marker: { color: C_GREEN },
+                    marker: { color: C_BLUE },
                     text: rotTalento.map((r) => String(r.ingresos)),
                     textposition: "outside" as const,
                   },
