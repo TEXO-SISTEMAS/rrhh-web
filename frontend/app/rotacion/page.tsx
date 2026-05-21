@@ -521,15 +521,21 @@ export default function RotacionPage() {
               </ChartCard>
             )}
             {motOrig.length > 0 && (
-              <ChartCard title="Top 5 Motivos de Salida">
+              <ChartCard title="Motivos de Salida">
                 <PlotChart
                   light
                   data={[{ type: "bar", orientation: "h",
                     x: motOrig.map((r) => r.cantidad),
                     y: motOrig.map((r) => r.motivo),
-                    marker: { color: "#2563EB" } }]}
-                  layout={{ margin: { t: 16, r: 16, b: 36, l: 220 } }}
-                  height={320}
+                    marker: { color: "#2563EB" },
+                    text: motOrig.map((r) => String(r.cantidad)),
+                    textposition: "outside" }]}
+                  layout={{
+                    margin: { t: 16, r: 48, b: 36, l: 240 },
+                    xaxis: { autorange: true },
+                    yaxis: { automargin: true, tickfont: { size: 13 } },
+                  }}
+                  height={motOrig.length * 80 + 60}
                 />
               </ChartCard>
             )}
