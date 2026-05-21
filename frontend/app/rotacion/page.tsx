@@ -53,7 +53,7 @@ function computeFromRows(allRows: Row[]) {
   const empresas     = new Set(allRows.map((r) => r.EMPRESA).filter(Boolean)).size;
   const vol          = salidas.filter((r) => { const t = String(r.TIPO_SALIDA ?? "").toUpperCase(); return t.includes("VOL") && !t.includes("INV"); }).length;
   const invol        = salidas.filter((r) => String(r.TIPO_SALIDA ?? "").toUpperCase().includes("INV")).length;
-  const permArr      = salidas.map((r) => Number(r.MESES_PERMANENCIA)).filter((v) => !isNaN(v));
+  const permArr      = todasSalidas.map((r) => Number(r.MESES_PERMANENCIA)).filter((v) => !isNaN(v));
   const permProm     = permArr.length ? Math.round((permArr.reduce((a, b) => a + b, 0) / permArr.length) * 10) / 10 : null;
   const tasa         = hcEnero > 0 ? Math.round(todasSalidas.length / hcEnero * 1000) / 10 : null;
 
@@ -130,29 +130,29 @@ function computeFromRows(allRows: Row[]) {
       }, {} as Record<string, number>)
   ).map(([k, n]) => { const [empresa, motivo] = k.split("||"); return { empresa, motivo, n }; });
 
-  const permEmp = Object.entries(groupBy(salidas.filter((r) => r.MESES_PERMANENCIA != null && !isNaN(Number(r.MESES_PERMANENCIA))), "EMPRESA"))
+  const permEmp = Object.entries(groupBy(todasSalidas.filter((r) => r.MESES_PERMANENCIA != null && !isNaN(Number(r.MESES_PERMANENCIA))), "EMPRESA"))
     .map(([emp, r]) => ({ empresa: emp, meses: Math.round(r.reduce((a, x) => a + Number(x.MESES_PERMANENCIA), 0) / r.length * 10) / 10 }))
     .filter((r) => r.meses > 0).sort((a, b) => a.meses - b.meses);
 
-  const topCargos = Object.entries(groupBy(salidas.filter((r) => r.CARGO && String(r.CARGO).toUpperCase() !== "NAN"), "CARGO"))
+  const topCargos = Object.entries(groupBy(todasSalidas.filter((r) => r.CARGO && String(r.CARGO).toUpperCase() !== "NAN"), "CARGO"))
     .map(([cargo, r]) => ({ cargo, salidas: r.length })).sort((a, b) => b.salidas - a.salidas).slice(0, 10);
 
-  const permCargo = Object.entries(groupBy(salidas.filter((r) => r.CARGO && r.MESES_PERMANENCIA != null), "CARGO"))
+  const permCargo = Object.entries(groupBy(todasSalidas.filter((r) => r.CARGO && r.MESES_PERMANENCIA != null), "CARGO"))
     .map(([cargo, r]) => ({ cargo, meses: Math.round(r.reduce((a, x) => a + Number(x.MESES_PERMANENCIA), 0) / r.length * 10) / 10 }))
     .filter((r) => r.meses > 0).sort((a, b) => a.meses - b.meses).slice(0, 10);
 
-  const topAreas = Object.entries(groupBy(salidas.filter((r) => r.AREA && String(r.AREA).toUpperCase() !== "NAN"), "AREA"))
+  const topAreas = Object.entries(groupBy(todasSalidas.filter((r) => r.AREA && String(r.AREA).toUpperCase() !== "NAN"), "AREA"))
     .map(([area, r]) => ({ area, salidas: r.length })).sort((a, b) => b.salidas - a.salidas).slice(0, 10);
 
-  const topDept = Object.entries(groupBy(salidas.filter((r) => r.DEPARTAMENTO && String(r.DEPARTAMENTO).toUpperCase() !== "NAN"), "DEPARTAMENTO"))
+  const topDept = Object.entries(groupBy(todasSalidas.filter((r) => r.DEPARTAMENTO && String(r.DEPARTAMENTO).toUpperCase() !== "NAN"), "DEPARTAMENTO"))
     .map(([dept, r]) => ({ dept, salidas: r.length })).sort((a, b) => b.salidas - a.salidas).slice(0, 10);
 
-  const permHist = salidas.map((r) => Number(r.MESES_PERMANENCIA)).filter((v) => !isNaN(v) && v > 0);
+  const permHist = todasSalidas.map((r) => Number(r.MESES_PERMANENCIA)).filter((v) => !isNaN(v) && v > 0);
 
   const byAno: Record<string, typeof tasaMensual> = {};
   for (const r of tasaMensual) { (byAno[r.ano] = byAno[r.ano] ?? []).push(r); }
 
-  const porAno = Object.entries(groupBy(salidas, "ANO_REPORTE"))
+  const porAno = Object.entries(groupBy(todasSalidas, "ANO_REPORTE"))
     .map(([ano, r]) => ({ ano: String(ano), salidas: r.length })).sort((a, b) => a.ano.localeCompare(b.ano));
 
   const tipoAno = (() => {
@@ -168,7 +168,7 @@ function computeFromRows(allRows: Row[]) {
 
   const heatmap = (() => {
     const acc: Record<string, Record<number, number>> = {};
-    for (const r of salidas.filter((r) => r.EMPRESA)) {
+    for (const r of todasSalidas.filter((r) => r.EMPRESA)) {
       const emp = String(r.EMPRESA); const mes = Number(r.MES_REPORTE);
       if (isNaN(mes)) continue;
       acc[emp] = acc[emp] ?? {}; acc[emp][mes] = (acc[emp][mes] ?? 0) + 1;
