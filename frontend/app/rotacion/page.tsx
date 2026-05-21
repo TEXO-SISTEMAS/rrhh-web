@@ -319,14 +319,29 @@ function computeFromRows(allRows: Row[]) {
   const rotTalento = (() => {
     const empMap = groupBy(allRows.filter((r) => r.EMPRESA), "EMPRESA");
     return Object.entries(empMap).map(([empresa, empRows]) => {
-      const anos    = empRows.map((r) => Number(r.ANO_REPORTE)).filter((v) => !isNaN(v));
-      const ultAno  = anos.length ? Math.max(...anos) : null;
+      const anos   = empRows.map((r) => Number(r.ANO_REPORTE)).filter((v) => !isNaN(v));
+      const ultAno = anos.length ? Math.max(...anos) : null;
       if (!ultAno) return null;
       const rowsAno = empRows.filter((r) => Number(r.ANO_REPORTE) === ultAno);
-      const ingresos = rowsAno.filter((r) => String(r.SITUACION ?? "").trim().toUpperCase() === "A").length;
-      const egresos  = rowsAno.filter((r) => String(r.SITUACION ?? "").trim().toUpperCase() === "I").length;
-      const hcEnero  = rowsAno.filter((r) => Number(r.MES_REPORTE) === 1).length;
-      const pct      = hcEnero > 0 ? Math.round(egresos / hcEnero * 100) : null;
+
+      // Ingresos reales: personas únicas (por CEDULA) con SITUACION=A y FECHA_INGRESO en el año
+      const cedulasIngreso = new Set(
+        rowsAno
+          .filter((r) => {
+            if (String(r.SITUACION ?? "").trim().toUpperCase() !== "A") return false;
+            const fi = String(r.FECHA_INGRESO ?? "");
+            if (!fi || fi === "null" || fi === "nan") return false;
+            const anoIngreso = new Date(fi).getFullYear();
+            return anoIngreso === ultAno;
+          })
+          .map((r) => String(r.CEDULA ?? "").trim())
+          .filter((ci) => ci && ci.toUpperCase() !== "NAN")
+      );
+      const ingresos = cedulasIngreso.size;
+
+      const egresos = rowsAno.filter((r) => String(r.SITUACION ?? "").trim().toUpperCase() === "I").length;
+      const hcEnero = rowsAno.filter((r) => Number(r.MES_REPORTE) === 1).length;
+      const pct     = hcEnero > 0 ? Math.round(egresos / hcEnero * 100) : null;
       return { empresa, ingresos, egresos, pct };
     }).filter(Boolean).filter((r) => r!.ingresos > 0 || r!.egresos > 0) as
       { empresa: string; ingresos: number; egresos: number; pct: number | null }[];

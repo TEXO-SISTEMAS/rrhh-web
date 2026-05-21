@@ -365,7 +365,7 @@ async def procesar_rotacion(files: List[UploadFile] = File(...)):
     raw_cols = [c for c in [
         "EMPRESA", "TIPO_SALIDA", "MOTIVO_SALIDA", "MOTIVO_CATEGORIA",
         "ANO_REPORTE", "MES_REPORTE", "SITUACION", "MESES_PERMANENCIA",
-        "CARGO", "AREA", "DEPARTAMENTO",
+        "CARGO", "AREA", "DEPARTAMENTO", "CEDULA", "FECHA_INGRESO",
     ] if c in df.columns]
     raw_rows = _safe_records(df[raw_cols].copy())
 
