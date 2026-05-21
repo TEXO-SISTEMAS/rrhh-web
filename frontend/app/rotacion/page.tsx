@@ -71,19 +71,20 @@ function computeFromRows(allRows: Row[]) {
     return { labels: Object.keys(m), values: Object.values(m).map((v) => v.length) };
   })();
 
+  const categorizarMotivo = (raw: string): string | null => {
+    const v = raw.trim().toUpperCase();
+    if (v === "RENUNCIA") return "Renuncia";
+    if (v.includes("DESPIDO INJUSTIFICADO")) return "Despido Injustificado";
+    if (v.includes("PRUEBA")) return "Término de Contrato de Prueba";
+    return null;
+  };
+
   const motOrig = (() => {
-    const categorizar = (raw: string): string | null => {
-      const v = raw.trim().toUpperCase();
-      if (v === "RENUNCIA") return "Renuncia";
-      if (v.includes("DESPIDO INJUSTIFICADO")) return "Despido Injustificado";
-      if (v.includes("PRUEBA")) return "Término de Contrato de Prueba";
-      return null;
-    };
     const counts: Record<string, number> = {};
     for (const r of todasSalidas) {
       const raw = String(r.MOTIVO_SALIDA ?? "").trim();
       if (!raw || raw.toUpperCase() === "NAN") continue;
-      const cat = categorizar(raw);
+      const cat = categorizarMotivo(raw);
       if (!cat) continue;
       counts[cat] = (counts[cat] ?? 0) + 1;
     }
@@ -143,13 +144,18 @@ function computeFromRows(allRows: Row[]) {
       }, {} as Record<string, number>)
   ).map(([k, n]) => { const [empresa, tipo] = k.split("||"); return { empresa, tipo, n }; });
 
-  const motivoEmp = Object.entries(
-    todasSalidas.filter((r) => r.MOTIVO_SALIDA && String(r.MOTIVO_SALIDA).toUpperCase() !== "NAN")
-      .reduce((acc, r) => {
-        const key = `${r.EMPRESA}||${r.MOTIVO_SALIDA}`;
-        acc[key] = (acc[key] ?? 0) + 1; return acc;
-      }, {} as Record<string, number>)
-  ).map(([k, n]) => { const [empresa, motivo] = k.split("||"); return { empresa, motivo, n }; });
+  const motivoEmp = (() => {
+    const acc: Record<string, number> = {};
+    for (const r of todasSalidas) {
+      const raw = String(r.MOTIVO_SALIDA ?? "").trim();
+      if (!raw || raw.toUpperCase() === "NAN") continue;
+      const cat = categorizarMotivo(raw);
+      if (!cat) continue;
+      const key = `${r.EMPRESA}||${cat}`;
+      acc[key] = (acc[key] ?? 0) + 1;
+    }
+    return Object.entries(acc).map(([k, n]) => { const [empresa, motivo] = k.split("||"); return { empresa, motivo, n }; });
+  })();
 
   const permEmp = Object.entries(groupBy(todasSalidas.filter((r) => r.MESES_PERMANENCIA != null && !isNaN(Number(r.MESES_PERMANENCIA))), "EMPRESA"))
     .map(([emp, r]) => ({ empresa: emp, meses: Math.round(r.reduce((a, x) => a + Number(x.MESES_PERMANENCIA), 0) / r.length * 10) / 10 }))
@@ -450,17 +456,24 @@ export default function RotacionPage() {
 
   const tiposUnicos   = Array.from(new Set(tipoEmp.map((r) => r.tipo)));
   const empresasUniq  = Array.from(new Set(tipoEmp.map((r) => r.empresa)));
-  const tipoEmpTraces = tiposUnicos.map((tipo, i) => ({
+  const TIPO_COLOR: Record<string, string> = { "VOLUNTARIA": C_BLUE, "INVOLUNTARIA": C_RED };
+  const tipoEmpTraces = tiposUnicos.map((tipo) => ({
     type: "bar" as const, name: tipo,
     x: empresasUniq,
     y: empresasUniq.map((emp) => tipoEmp.find((r) => r.empresa === emp && r.tipo === tipo)?.n ?? 0),
-    marker: { color: LIGHT_COLOR_SEQ[i % LIGHT_COLOR_SEQ.length] },
+    marker: { color: TIPO_COLOR[String(tipo).toUpperCase()] ?? C_GRAY },
   }));
 
   const motivosUnicos     = Array.from(new Set(motivoEmp.map((r) => r.motivo)));
   const empresasMotivo    = Array.from(new Set(motivoEmp.map((r) => r.empresa)));
-  const motivoEmpTraces   = motivosUnicos.map((motivo, i) => ({
+  const MOTIVO_COLOR: Record<string, string> = {
+    "Renuncia": C_BLUE,
+    "Despido Injustificado": C_RED,
+    "Término de Contrato de Prueba": C_ORANGE,
+  };
+  const motivoEmpTraces   = motivosUnicos.map((motivo) => ({
     type: "bar" as const, name: motivo,
+    marker: { color: MOTIVO_COLOR[motivo] ?? C_GRAY },
     x: empresasMotivo,
     y: empresasMotivo.map((emp) => motivoEmp.find((r) => r.empresa === emp && r.motivo === motivo)?.n ?? 0),
     marker: { color: LIGHT_COLOR_SEQ[i % LIGHT_COLOR_SEQ.length] },
