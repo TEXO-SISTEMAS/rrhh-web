@@ -32,8 +32,15 @@ const TABS = [
   { id: "respuestas",   label: "Respuestas",           icon: "💬" },
 ];
 
+// ── Paleta corporativa para directorio ───────────────────────────────────────
+const C_BLUE   = "#2563EB"; // dato principal / activos
+const C_GRAY   = "#94a3b8"; // dato secundario / referencia
+const C_GREEN  = "#22c55e"; // ingresos / positivo
+const C_RED    = "#ef4444"; // salidas / negativo / involuntaria
+const C_ORANGE = "#f97316"; // línea de tendencia / tasa
+
 function barColors(n: number) {
-  return Array.from({ length: n }, (_, i) => LIGHT_COLOR_SEQ[i % LIGHT_COLOR_SEQ.length]);
+  return Array.from({ length: n }, () => C_RED);
 }
 
 function isSalida(r: Row) {
@@ -546,7 +553,7 @@ export default function RotacionPage() {
                   data={[{ type: "bar", orientation: "h",
                     x: motOrig.map((r) => r.cantidad),
                     y: motOrig.map((r) => r.motivo),
-                    marker: { color: "#2563EB" },
+                    marker: { color: C_RED },
                     text: motOrig.map((r) => String(r.cantidad)),
                     textposition: "outside" }]}
                   layout={{
@@ -572,7 +579,7 @@ export default function RotacionPage() {
                     name: `Activos al 31/12/${incDecHC.ano}`,
                     x: incDecHC.data.map((r) => r.label),
                     y: incDecHC.data.map((r) => r.hcFin),
-                    marker: { color: "#2563EB" },
+                    marker: { color: C_BLUE },
                     text: incDecHC.data.map((r) => String(r.hcFin)),
                     textposition: "outside" as const,
                   },
@@ -581,7 +588,7 @@ export default function RotacionPage() {
                     name: `Activos al 01/01/${incDecHC.ano}`,
                     x: incDecHC.data.map((r) => r.label),
                     y: incDecHC.data.map((r) => r.hcInicio),
-                    marker: { color: "#ef4444" },
+                    marker: { color: C_GRAY },
                     text: incDecHC.data.map((r) => String(r.hcInicio)),
                     textposition: "outside" as const,
                   },
@@ -592,8 +599,8 @@ export default function RotacionPage() {
                     x: incDecHC.data.map((r) => r.label),
                     y: incDecHC.data.map((r) => r.pct ?? 0),
                     yaxis: "y2",
-                    line:   { color: "#2563EB", width: 2 },
-                    marker: { color: "#2563EB", size: 7 },
+                    line:   { color: C_ORANGE, width: 2 },
+                    marker: { color: C_ORANGE, size: 7 },
                     text: incDecHC.data.map((r) => r.pct != null ? `${r.pct}%` : ""),
                     textposition: "top center" as const,
                   },
@@ -638,7 +645,7 @@ export default function RotacionPage() {
                     name: "Nº de Ingresos",
                     x: rotTalento.map((r) => r.empresa),
                     y: rotTalento.map((r) => r.ingresos),
-                    marker: { color: "#059669" },
+                    marker: { color: C_GREEN },
                     text: rotTalento.map((r) => String(r.ingresos)),
                     textposition: "outside" as const,
                   },
@@ -647,7 +654,7 @@ export default function RotacionPage() {
                     name: "Nº de Egresos",
                     x: rotTalento.map((r) => r.empresa),
                     y: rotTalento.map((r) => r.egresos),
-                    marker: { color: "#94a3b8" },
+                    marker: { color: C_RED },
                     text: rotTalento.map((r) => String(r.egresos)),
                     textposition: "outside" as const,
                   },
@@ -658,8 +665,8 @@ export default function RotacionPage() {
                     x: rotTalento.map((r) => r.empresa),
                     y: rotTalento.map((r) => r.pct ?? 0),
                     yaxis: "y2",
-                    line:   { color: "#DC2626", width: 2 },
-                    marker: { color: "#DC2626", size: 7 },
+                    line:   { color: C_ORANGE, width: 2 },
+                    marker: { color: C_ORANGE, size: 7 },
                     text: rotTalento.map((r) => r.pct != null ? `${r.pct}%` : ""),
                     textposition: "top center" as const,
                   },
@@ -714,19 +721,19 @@ export default function RotacionPage() {
                 <div className="flex flex-col justify-center gap-6 min-w-[140px]">
                   {retKpis.agencias != null && (
                     <div>
-                      <div className="text-4xl font-black" style={{ color: "#f97316" }}>{retKpis.agencias}%</div>
+                      <div className="text-4xl font-black" style={{ color: C_BLUE }}>{retKpis.agencias}%</div>
                       <div className="text-xs mt-0.5" style={{ color: "var(--text2)" }}>Promedio<br/><span className="font-bold" style={{ color: "var(--text)" }}>Agencias</span></div>
                     </div>
                   )}
                   {retKpis.tac != null && (
                     <div>
-                      <div className="text-4xl font-black" style={{ color: "#3b82f6" }}>{retKpis.tac}%</div>
+                      <div className="text-4xl font-black" style={{ color: C_BLUE }}>{retKpis.tac}%</div>
                       <div className="text-xs mt-0.5" style={{ color: "var(--text2)" }}>Promedio<br/><span className="font-bold" style={{ color: "var(--text)" }}>TAC Media</span></div>
                     </div>
                   )}
                   {retKpis.csc != null && (
                     <div>
-                      <div className="text-4xl font-black" style={{ color: "#10b981" }}>{retKpis.csc}%</div>
+                      <div className="text-4xl font-black" style={{ color: C_BLUE }}>{retKpis.csc}%</div>
                       <div className="text-xs mt-0.5" style={{ color: "var(--text2)" }}>Promedio<br/><span className="font-bold" style={{ color: "var(--text)" }}>CSC</span></div>
                     </div>
                   )}
@@ -737,15 +744,15 @@ export default function RotacionPage() {
                     data={[
                       { type: "bar", name: "Activos",
                         x: retencion.map((r) => r.empresa), y: retencion.map((r) => r.activos),
-                        marker: { color: retencion.map((r) => r.grupo === "csc" ? "#059669" : r.grupo === "tac" ? "#2563EB" : "#D97706") },
+                        marker: { color: C_BLUE },
                         text: retencion.map((r) => String(r.activos)), textposition: "outside" },
                       { type: "bar", name: "Egresos",
                         x: retencion.map((r) => r.empresa), y: retencion.map((r) => r.egresos),
-                        marker: { color: "#94a3b8" },
+                        marker: { color: C_RED },
                         text: retencion.map((r) => String(r.egresos)), textposition: "outside" },
                       { type: "scatter", mode: "text+lines+markers", name: "% Retención",
                         x: retencion.map((r) => r.empresa), y: retencion.map((r) => r.pct),
-                        yaxis: "y2", line: { color: "#2563EB", width: 2 }, marker: { color: "#2563EB", size: 7 },
+                        yaxis: "y2", line: { color: C_ORANGE, width: 2 }, marker: { color: C_ORANGE, size: 7 },
                         text: retencion.map((r) => `${r.pct}%`), textposition: "top center" },
                     ]}
                     layout={{ barmode: "group",
@@ -779,19 +786,19 @@ export default function RotacionPage() {
                 <div className="flex flex-col justify-center gap-6 min-w-[140px]">
                   {rotInv.kpis.agencias != null && (
                     <div>
-                      <div className="text-4xl font-black" style={{ color: "#f97316" }}>{rotInv.kpis.agencias}%</div>
+                      <div className="text-4xl font-black" style={{ color: C_RED }}>{rotInv.kpis.agencias}%</div>
                       <div className="text-xs mt-0.5" style={{ color: "var(--text2)" }}>Promedio<br/><span className="font-bold" style={{ color: "var(--text)" }}>Agencias</span></div>
                     </div>
                   )}
                   {rotInv.kpis.tac != null && (
                     <div>
-                      <div className="text-4xl font-black" style={{ color: "#3b82f6" }}>{rotInv.kpis.tac}%</div>
+                      <div className="text-4xl font-black" style={{ color: C_RED }}>{rotInv.kpis.tac}%</div>
                       <div className="text-xs mt-0.5" style={{ color: "var(--text2)" }}>Promedio<br/><span className="font-bold" style={{ color: "var(--text)" }}>TAC Media</span></div>
                     </div>
                   )}
                   {rotInv.kpis.csc != null && (
                     <div>
-                      <div className="text-4xl font-black" style={{ color: "#10b981" }}>{rotInv.kpis.csc}%</div>
+                      <div className="text-4xl font-black" style={{ color: C_RED }}>{rotInv.kpis.csc}%</div>
                       <div className="text-xs mt-0.5" style={{ color: "var(--text2)" }}>Promedio<br/><span className="font-bold" style={{ color: "var(--text)" }}>CSC</span></div>
                     </div>
                   )}
@@ -802,11 +809,11 @@ export default function RotacionPage() {
                     data={[
                       { type: "bar", name: "Involuntaria",
                         x: rotInv.data.map((r) => r.empresa), y: rotInv.data.map((r) => r.involuntaria),
-                        marker: { color: "#94a3b8" }, text: rotInv.data.map((r) => String(r.involuntaria)),
+                        marker: { color: C_RED }, text: rotInv.data.map((r) => String(r.involuntaria)),
                         textposition: "outside" as const },
                       { type: "scatter" as const, mode: "text+lines+markers" as const, name: "% Rotación Involuntaria",
                         x: rotInv.data.map((r) => r.empresa), y: rotInv.data.map((r) => r.pct ?? 0),
-                        yaxis: "y2", line: { color: "#DC2626", width: 2 }, marker: { color: "#DC2626", size: 7 },
+                        yaxis: "y2", line: { color: C_ORANGE, width: 2 }, marker: { color: C_ORANGE, size: 7 },
                         text: rotInv.data.map((r) => r.pct != null ? `${r.pct}%` : ""), textposition: "top center" as const },
                     ]}
                     layout={{ barmode: "group", yaxis2: { overlaying: "y", side: "right", ticksuffix: "%", showgrid: false },
@@ -826,19 +833,19 @@ export default function RotacionPage() {
                 <div className="flex flex-col justify-center gap-6 min-w-[140px]">
                   {rotVol.kpis.agencias != null && (
                     <div>
-                      <div className="text-4xl font-black" style={{ color: "#f97316" }}>{rotVol.kpis.agencias}%</div>
+                      <div className="text-4xl font-black" style={{ color: C_BLUE }}>{rotVol.kpis.agencias}%</div>
                       <div className="text-xs mt-0.5" style={{ color: "var(--text2)" }}>Promedio<br/><span className="font-bold" style={{ color: "var(--text)" }}>Agencias</span></div>
                     </div>
                   )}
                   {rotVol.kpis.tac != null && (
                     <div>
-                      <div className="text-4xl font-black" style={{ color: "#3b82f6" }}>{rotVol.kpis.tac}%</div>
+                      <div className="text-4xl font-black" style={{ color: C_BLUE }}>{rotVol.kpis.tac}%</div>
                       <div className="text-xs mt-0.5" style={{ color: "var(--text2)" }}>Promedio<br/><span className="font-bold" style={{ color: "var(--text)" }}>TAC Media</span></div>
                     </div>
                   )}
                   {rotVol.kpis.csc != null && (
                     <div>
-                      <div className="text-4xl font-black" style={{ color: "#10b981" }}>{rotVol.kpis.csc}%</div>
+                      <div className="text-4xl font-black" style={{ color: C_BLUE }}>{rotVol.kpis.csc}%</div>
                       <div className="text-xs mt-0.5" style={{ color: "var(--text2)" }}>Promedio<br/><span className="font-bold" style={{ color: "var(--text)" }}>CSC</span></div>
                     </div>
                   )}
@@ -849,11 +856,11 @@ export default function RotacionPage() {
                     data={[
                       { type: "bar", name: "Voluntaria",
                         x: rotVol.data.map((r) => r.empresa), y: rotVol.data.map((r) => r.voluntaria),
-                        marker: { color: "#94a3b8" }, text: rotVol.data.map((r) => String(r.voluntaria)),
+                        marker: { color: C_BLUE }, text: rotVol.data.map((r) => String(r.voluntaria)),
                         textposition: "outside" as const },
                       { type: "scatter" as const, mode: "text+lines+markers" as const, name: "% Rotación Voluntaria",
                         x: rotVol.data.map((r) => r.empresa), y: rotVol.data.map((r) => r.pct ?? 0),
-                        yaxis: "y2", line: { color: "#7C3AED", width: 2 }, marker: { color: "#7C3AED", size: 7 },
+                        yaxis: "y2", line: { color: C_ORANGE, width: 2 }, marker: { color: C_ORANGE, size: 7 },
                         text: rotVol.data.map((r) => r.pct != null ? `${r.pct}%` : ""), textposition: "top center" as const },
                     ]}
                     layout={{ barmode: "group", yaxis2: { overlaying: "y", side: "right", ticksuffix: "%", showgrid: false },
