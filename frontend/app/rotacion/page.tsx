@@ -65,7 +65,7 @@ function computeFromRows(allRows: Row[]) {
   })();
 
   const motOrig = (() => {
-    const m = groupBy(salidas.filter((r) => r.MOTIVO_SALIDA && String(r.MOTIVO_SALIDA).toUpperCase() !== "NAN"), "MOTIVO_SALIDA");
+    const m = groupBy(todasSalidas.filter((r) => r.MOTIVO_SALIDA && String(r.MOTIVO_SALIDA).toUpperCase() !== "NAN"), "MOTIVO_SALIDA");
     return Object.entries(m).map(([motivo, r]) => ({ motivo, cantidad: r.length })).sort((a, b) => b.cantidad - a.cantidad).slice(0, 5);
   })();
 
@@ -123,7 +123,7 @@ function computeFromRows(allRows: Row[]) {
   ).map(([k, n]) => { const [empresa, tipo] = k.split("||"); return { empresa, tipo, n }; });
 
   const motivoEmp = Object.entries(
-    salidas.filter((r) => r.MOTIVO_SALIDA && String(r.MOTIVO_SALIDA).toUpperCase() !== "NAN")
+    todasSalidas.filter((r) => r.MOTIVO_SALIDA && String(r.MOTIVO_SALIDA).toUpperCase() !== "NAN")
       .reduce((acc, r) => {
         const key = `${r.EMPRESA}||${r.MOTIVO_SALIDA}`;
         acc[key] = (acc[key] ?? 0) + 1; return acc;
