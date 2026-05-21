@@ -1139,7 +1139,7 @@ function RespuestasTab({
               x: empresasUniq,
               y: dimsUniq,
               z: heatZ,
-              colorscale: [[0, "#d73027"], [0.5, "#fee08b"], [1, "#1a9850"]],
+              colorscale: [[0, "#ffffff"], [0.4, "#fc8d59"], [1, "#b30000"]],
               zmin: 1,
               zmax: 5,
               text: heatZ.map((row) => row.map((v) => v != null ? String(v) : "")),
