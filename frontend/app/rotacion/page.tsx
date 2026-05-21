@@ -324,20 +324,24 @@ function computeFromRows(allRows: Row[]) {
       if (!ultAno) return null;
       const rowsAno = empRows.filter((r) => Number(r.ANO_REPORTE) === ultAno);
 
-      // Ingresos reales: personas únicas (por CEDULA) con SITUACION=A y FECHA_INGRESO en el año
-      const cedulasIngreso = new Set(
+      // Ingresos reales: personas únicas con SITUACION=A y año de ingreso = año analizado
+      const ingresosSet = new Set(
         rowsAno
           .filter((r) => {
             if (String(r.SITUACION ?? "").trim().toUpperCase() !== "A") return false;
-            const fi = String(r.FECHA_INGRESO ?? "");
-            if (!fi || fi === "null" || fi === "nan") return false;
-            const anoIngreso = new Date(fi).getFullYear();
-            return anoIngreso === ultAno;
+            // Usar ANO_INGRESO si existe, sino parsear FECHA_INGRESO
+            const anoIng = r.ANO_INGRESO != null
+              ? Number(r.ANO_INGRESO)
+              : (() => { const fi = String(r.FECHA_INGRESO ?? ""); return fi && fi !== "null" ? new Date(fi).getFullYear() : null; })();
+            return anoIng === ultAno;
           })
-          .map((r) => String(r.CEDULA ?? "").trim())
-          .filter((ci) => ci && ci.toUpperCase() !== "NAN")
+          .map((r) => {
+            const id = String(r.CEDULA ?? r.NOMBRE ?? "").trim();
+            return id && id.toUpperCase() !== "NAN" ? id : null;
+          })
+          .filter(Boolean)
       );
-      const ingresos = cedulasIngreso.size;
+      const ingresos = ingresosSet.size;
 
       const egresos = rowsAno.filter((r) => String(r.SITUACION ?? "").trim().toUpperCase() === "I").length;
       const hcEnero = rowsAno.filter((r) => Number(r.MES_REPORTE) === 1).length;
