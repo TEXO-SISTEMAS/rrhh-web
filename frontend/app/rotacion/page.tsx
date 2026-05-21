@@ -65,8 +65,22 @@ function computeFromRows(allRows: Row[]) {
   })();
 
   const motOrig = (() => {
-    const m = groupBy(todasSalidas.filter((r) => r.MOTIVO_SALIDA && String(r.MOTIVO_SALIDA).toUpperCase() !== "NAN"), "MOTIVO_SALIDA");
-    return Object.entries(m).map(([motivo, r]) => ({ motivo, cantidad: r.length })).sort((a, b) => b.cantidad - a.cantidad).slice(0, 5);
+    const categorizar = (raw: string): string | null => {
+      const v = raw.trim().toUpperCase();
+      if (v === "RENUNCIA") return "Renuncia";
+      if (v.includes("DESPIDO INJUSTIFICADO")) return "Despido Injustificado";
+      if (v.includes("PRUEBA")) return "Term. Contrato de Prueba";
+      return null;
+    };
+    const counts: Record<string, number> = {};
+    for (const r of todasSalidas) {
+      const raw = String(r.MOTIVO_SALIDA ?? "").trim();
+      if (!raw || raw.toUpperCase() === "NAN") continue;
+      const cat = categorizar(raw);
+      if (!cat) continue;
+      counts[cat] = (counts[cat] ?? 0) + 1;
+    }
+    return Object.entries(counts).map(([motivo, cantidad]) => ({ motivo, cantidad })).sort((a, b) => b.cantidad - a.cantidad);
   })();
 
   const tasaMensual = (() => {
