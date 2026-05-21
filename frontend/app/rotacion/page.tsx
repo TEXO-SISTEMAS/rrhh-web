@@ -69,7 +69,7 @@ function computeFromRows(allRows: Row[]) {
       const v = raw.trim().toUpperCase();
       if (v === "RENUNCIA") return "Renuncia";
       if (v.includes("DESPIDO INJUSTIFICADO")) return "Despido Injustificado";
-      if (v.includes("PRUEBA")) return "Term. Contrato de Prueba";
+      if (v.includes("PRUEBA")) return "Término de Contrato de Prueba";
       return null;
     };
     const counts: Record<string, number> = {};
