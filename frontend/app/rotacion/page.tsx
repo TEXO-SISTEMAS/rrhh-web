@@ -234,9 +234,14 @@ function computeFromRows(allRows: Row[]) {
       if (isNaN(mes)) continue;
       acc[emp] = acc[emp] ?? {}; acc[emp][mes] = (acc[emp][mes] ?? 0) + 1;
     }
-    const rows: AnyObj[] = [];
-    for (const [emp, meses] of Object.entries(acc)) for (const [mes, n] of Object.entries(meses)) rows.push({ empresa: emp, mes_nombre: MESES_NOMBRE[Number(mes)], n });
-    return rows;
+    const empresas = Object.keys(acc);
+    const mesesDisp = Array.from(new Set(
+      Object.values(acc).flatMap((m) => Object.keys(m).map(Number))
+    )).sort((a, b) => a - b);
+    // Matriz completa: 0 donde no hay salidas (evita NaN gris)
+    const z = empresas.map((emp) => mesesDisp.map((mes) => acc[emp][mes] ?? 0));
+    const xLabels = mesesDisp.map((m) => MESES_NOMBRE[m]);
+    return { empresas, xLabels, z };
   })();
 
   const TAC_SET      = new Set(["AMPLIFY","BPR"]);
@@ -984,13 +989,22 @@ export default function RotacionPage() {
             </ChartCard>
           )}
 
-          {heatmap.length > 0 && (
+          {heatmap.empresas.length > 0 && (
             <ChartCard title="Mapa de Calor: Salidas por Empresa y Mes">
               <PlotChart
                 light
-                data={[{ type: "heatmap" as const, x: heatmap.map((r) => r.mes_nombre), y: heatmap.map((r) => r.empresa), z: heatmap.map((r) => r.n), colorscale: "Blues" }]}
+                data={[{
+                  type: "heatmap" as const,
+                  x: heatmap.xLabels,
+                  y: heatmap.empresas,
+                  z: heatmap.z,
+                  colorscale: [[0, "#f0f4ff"], [0.01, "#bfdbfe"], [0.4, "#3b82f6"], [1, "#1e3a8a"]],
+                  zmin: 0,
+                  hoverongaps: false,
+                  xgap: 2, ygap: 2,
+                }]}
                 layout={{ margin: { t: 16, r: 16, b: 60, l: 110 } }}
-                height={320}
+                height={Math.max(320, heatmap.empresas.length * 36)}
               />
             </ChartCard>
           )}
