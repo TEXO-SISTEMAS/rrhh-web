@@ -828,8 +828,8 @@ export default function RotacionPage() {
                   x: permEmp.map((r) => r.meses), y: permEmp.map((r) => r.empresa),
                   text: permEmp.map((r) => `${r.meses} meses`), textposition: "outside" as const,
                   marker: { color: C_RED } }]}
-                layout={{ margin: { t: 16, r: 40, b: 36, l: 110 } }}
-                height={Math.max(280, permEmp.length * 28)}
+                layout={{ margin: { t: 16, r: 100, b: 36, l: 120 }, bargap: 0.4, yaxis: { automargin: true } }}
+                height={Math.max(320, permEmp.length * 42)}
               />
             </ChartCard>
           )}
@@ -842,8 +842,8 @@ export default function RotacionPage() {
                   x: permEmpActivos.map((r) => r.meses), y: permEmpActivos.map((r) => r.empresa),
                   text: permEmpActivos.map((r) => `${r.meses} meses`), textposition: "outside" as const,
                   marker: { color: C_BLUE } }]}
-                layout={{ margin: { t: 16, r: 100, b: 36, l: 110 } }}
-                height={Math.max(280, permEmpActivos.length * 28)}
+                layout={{ margin: { t: 16, r: 100, b: 36, l: 120 }, bargap: 0.4, yaxis: { automargin: true } }}
+                height={Math.max(320, permEmpActivos.length * 42)}
               />
             </ChartCard>
           )}
