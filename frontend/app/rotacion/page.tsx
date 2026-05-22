@@ -210,8 +210,6 @@ function computeFromRows(allRows: Row[]) {
     .map(([area, r]) => ({ area, n: r.length, meses: Math.round(r.reduce((a, x) => a + Number(x.MESES_PERMANENCIA), 0) / r.length * 10) / 10 }))
     .filter((r) => r.meses > 0).sort((a, b) => a.meses - b.meses).slice(0, 12);
 
-  const permHist = todasSalidas.map((r) => Number(r.MESES_PERMANENCIA)).filter((v) => !isNaN(v) && v > 0);
-
   const byAno: Record<string, typeof tasaMensual> = {};
   for (const r of tasaMensual) { (byAno[r.ano] = byAno[r.ano] ?? []).push(r); }
 
@@ -400,7 +398,7 @@ function computeFromRows(allRows: Row[]) {
       { empresa: string; ingresos: number; egresos: number; pct: number | null }[];
   })();
 
-  return { kpis, tipoSalida, motOrig, tasaMensual, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, permArea, topDept, permHist, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento };
+  return { kpis, tipoSalida, motOrig, tasaMensual, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, permArea, topDept, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento };
 }
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -478,7 +476,7 @@ export default function RotacionPage() {
   const filteredRows            = applyFilters(rawRows, selected);
   const advertencias: string[] = (data.advertencias as string[]) ?? [];
   const computed = computeFromRows(filteredRows);
-  const { kpis, tipoSalida, motOrig, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, permArea, topDept, permHist, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento } = computed;
+  const { kpis, tipoSalida, motOrig, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, permArea, topDept, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento } = computed;
 
   const entrevistas: AnyObj = (data.entrevistas as AnyObj) ?? {};
   const dimData = entrevistas.por_dimension
@@ -662,16 +660,6 @@ export default function RotacionPage() {
                 height={380}
               />
             </div>
-          )}
-          {permHist.length > 0 && (
-            <ChartCard title="Distribución de Permanencia al Momento de la Salida (meses)">
-              <PlotChart
-                light
-                data={[{ type: "histogram", x: permHist, marker: { color: C_BLUE } } as AnyObj]}
-                layout={{ margin: { t: 16, r: 16, b: 50, l: 50 } }}
-                height={280}
-              />
-            </ChartCard>
           )}
         </div>
       )}

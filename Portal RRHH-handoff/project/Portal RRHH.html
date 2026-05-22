@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal RRHH · TEXO</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;transition:background .25s,color .25s;overflow:hidden}
+.dark{--bg:#080d18;--bg2:#0e1525;--card:#131e30;--card2:#1a2840;--border:#1e2e47;--text:#e2e8f5;--text2:#6b7a99;--text3:#4a5568}
+.light{--bg:#f0f4fa;--bg2:#e4ecf7;--card:#ffffff;--card2:#f8fafd;--border:#dde6f5;--text:#0f172a;--text2:#475569;--text3:#94a3b8}
+:root{--accent:#7c5af6;--pink:#d946ef;--indigo:#6366f1;--cyan:#06b6d4;--green:#10b981;--orange:#f59e0b;--red:#ef4444}
+.app{display:flex;height:100vh;width:100vw;background:var(--bg);color:var(--text)}
+
+/* SIDEBAR */
+.sidebar{width:270px;min-width:270px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;overflow:hidden;transition:width .3s}
+.sidebar.presentation{width:0;min-width:0;overflow:hidden;border:none}
+.sidebar-logo{padding:20px 24px 18px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.logo-img{width:110px;display:block;filter:brightness(0) invert(1);opacity:.88}
+.light .logo-img{filter:none;opacity:1}
+.logo-tagline{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:2px;text-transform:uppercase}
+.logo-accent{height:2px;background:linear-gradient(90deg,var(--accent),transparent);border-radius:2px;margin-top:2px}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;padding:12px 20px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text2);transition:all .15s;border-left:3px solid transparent;margin:1px 0}
+.nav-item:hover{background:var(--card);color:var(--text)}
+.nav-item.active{background:var(--card);color:var(--accent);border-left-color:var(--accent)}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.sidebar-bottom{padding:14px 16px;border-top:1px solid var(--border)}
+.version{font-size:10px;color:var(--text3);text-align:center;line-height:1.5}
+
+/* SIDEBAR FILTERS */
+.filter-section{border-bottom:1px solid var(--border)}
+.filter-section-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;cursor:pointer;font-size:10px;font-weight:700;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;user-select:none;transition:color .15s}
+.filter-section-header:hover{color:var(--text)}
+.filter-chevron{font-size:10px;transition:transform .2s}
+.filter-chevron.open{transform:rotate(180deg)}
+.filter-chips{padding:0 12px 10px;display:flex;flex-wrap:wrap;gap:5px}
+.chip{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card2);color:var(--text2);transition:all .15s;letter-spacing:.3px;text-transform:uppercase}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.filters-header{padding:10px 16px 4px;font-size:11px;font-weight:700;color:var(--accent);letter-spacing:2px;text-transform:uppercase}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:60px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;flex-shrink:0}
+.topbar-left{display:flex;flex-direction:column}
+.module-label{font-size:10px;font-weight:600;color:var(--accent);letter-spacing:2px;text-transform:uppercase}
+.page-title{font-size:22px;font-weight:700;color:var(--text);line-height:1}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.btn{padding:8px 18px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{background:var(--card2);border:1px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
+.theme-toggle{width:36px;height:36px;border-radius:8px;background:var(--card2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s}
+.theme-toggle:hover{border-color:var(--accent)}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:20px}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:4px;transition:border-color .15s,transform .15s,box-shadow .15s}
+.kpi-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.kpi-label{font-size:10px;font-weight:600;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase}
+.kpi-value{font-size:38px;font-weight:800;color:var(--text);line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.kpi-value.accent{color:var(--accent)}
+.kpi-sub{font-size:12px;color:var(--text2)}
+.kpi-change{font-size:11px;font-weight:600;margin-top:4px}
+.kpi-change.up{color:var(--green)}
+.kpi-change.down{color:var(--red)}
+/* PRESENTATION MODE */
+.presentation-mode .content{padding:32px 40px}
+.presentation-mode .kpi-value{font-size:56px !important}
+.presentation-mode .kpi-label{font-size:12px !important}
+.presentation-mode .chart-title{font-size:13px !important}
+.presentation-mode .page-title{font-size:28px !important}
+.btn-present{background:var(--card2);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+.btn-present:hover,.btn-present.active{background:rgba(124,90,246,.15);border-color:var(--accent);color:var(--accent)}
+
+/* CHART GRID */
+.chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.chart-card.span2{grid-column:span 2}
+.chart-title{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase}
+.chart-wrap{position:relative;width:100%}
+.legend{display:flex;gap:16px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.filter-select{background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 12px;cursor:pointer;outline:none}
+.filter-select:focus{border-color:var(--accent)}
+.filter-label{font-size:12px;color:var(--text2);font-weight:500}
+
+/* SALARY TABLE */
+.salary-table{width:100%;border-collapse:collapse;font-size:13px}
+.salary-table th{text-align:left;padding:8px 12px;font-size:10px;font-weight:600;color:var(--text2);letter-spacing:1.2px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.salary-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+.salary-table tr:last-child td{border-bottom:none}
+.salary-table tr:hover td{background:var(--card2)}
+.gap-neg{color:var(--red);font-weight:600}
+.gap-pos{color:var(--green);font-weight:600}
+
+/* TWEAKS */
+.tweaks-panel{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;width:240px;box-shadow:0 20px 60px rgba(0,0,0,.4);z-index:100;display:flex;flex-direction:column;gap:14px}
+.tweaks-title{font-size:13px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.tweak-row{display:flex;flex-direction:column;gap:5px}
+.tweak-row label{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.8px;text-transform:uppercase}
+.tweak-row select,.tweak-row input[type=range]{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 8px;outline:none}
+.tweak-val{font-size:12px;color:var(--accent);font-weight:600;text-align:right}
+
+/* TAB ANIMATION */
+@keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.tab-content{animation:tabIn .22s cubic-bezier(.4,0,.2,1) both}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+
+/* BADGE */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-purple{background:rgba(124,90,246,.15);color:var(--accent)}
+.badge-green{background:rgba(16,185,129,.15);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+
+/* BIG STAT */
+.big-stat-row{display:flex;align-items:center;gap:32px}
+.big-stat{text-align:center}
+.big-stat-num{font-size:64px;font-weight:800;line-height:1;letter-spacing:-2px}
+.big-stat-label{font-size:13px;color:var(--text2);margin-top:4px}
+.divider-v{width:1px;height:80px;background:var(--border)}
+</style>
+</head>
+<body>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// Register datalabels plugin globally
+Chart.register(ChartDataLabels);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 🎨 DESIGN TOKENS — editá aquí para cambiar todo el sistema visual
+// ═══════════════════════════════════════════════════════════════════════════
+const TOKENS = {
+  // ── Tipografía ────────────────────────────────────────────────────────────
+  font: {
+    family:       "'DM Sans', sans-serif",   // Fuente principal
+    familyMono:   "monospace",               // Fuente monoespaciada
+    sizeBase:     13,                        // px — texto base sidebar/body
+    sizeLabel:    10,                        // px — etiquetas uppercase
+    sizeKPI:      38,                        // px — números KPI
+    sizeKPILarge: 56,                        // px — KPI en modo presentación
+    sizeTitle:    22,                        // px — título de página
+    weightRegular: 400,
+    weightMedium:  500,
+    weightBold:    700,
+    weightBlack:   800,
+  },
+
+  // ── Colores oscuros (dark mode) ───────────────────────────────────────────
+  dark: {
+    bg:      '#080d18',   // Fondo principal
+    bg2:     '#0e1525',   // Fondo sidebar / topbar
+    card:    '#131e30',   // Fondo tarjeta
+    card2:   '#1a2840',   // Fondo tarjeta secundaria / inputs
+    border:  '#1e2e47',   // Bordes
+    text:    '#e2e8f5',   // Texto principal
+    text2:   '#6b7a99',   // Texto secundario
+    text3:   '#4a5568',   // Texto terciario (labels, versión)
+  },
+
+  // ── Colores claros (light mode) ───────────────────────────────────────────
+  light: {
+    bg:      '#f0f4fa',
+    bg2:     '#e4ecf7',
+    card:    '#ffffff',
+    card2:   '#f8fafd',
+    border:  '#dde6f5',
+    text:    '#0f172a',
+    text2:   '#475569',
+    text3:   '#94a3b8',
+  },
+
+  // ── Colores de acento ─────────────────────────────────────────────────────
+  accent:  '#7c5af6',   // Acento principal (violeta)
+  pink:    '#d946ef',   // Mujeres / femenino
+  indigo:  '#818cf8',   // Hombres / masculino
+  green:   '#10b981',   // Positivo / ingresos
+  red:     '#ef4444',   // Negativo / egresos / alertas
+  orange:  '#f59e0b',   // Advertencia
+  cyan:    '#06b6d4',   // Informativo
+
+  // ── Espaciado ─────────────────────────────────────────────────────────────
+  spacing: {
+    xs:  4,
+    sm:  8,
+    md:  16,
+    lg:  24,
+    xl:  32,
+    xxl: 48,
+  },
+
+  // ── Bordes y sombras ──────────────────────────────────────────────────────
+  radius: {
+    sm:   6,    // px — chips, badges
+    md:   8,    // px — botones, inputs
+    lg:   12,   // px — tarjetas
+    xl:   14,   // px — panel tweaks
+    full: 9999, // px — píldoras
+  },
+
+  // ── Layout ────────────────────────────────────────────────────────────────
+  sidebarWidth:  270,   // px
+  topbarHeight:   60,   // px
+  contentPadding: 28,   // px
+
+  // ── Animaciones ───────────────────────────────────────────────────────────
+  transition: {
+    fast:   '0.15s ease',
+    normal: '0.25s ease',
+    slow:   '0.4s ease',
+  },
+  tabAnimDuration: '0.22s',  // CSS keyframe tabIn
+  kpiCountDuration: 900,     // ms — duración del contador animado
+};
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── COUNT-UP HOOK ───────────────────────────────────────────────────────────
+function useCountUp(target, duration = 900) {
+  const [display, setDisplay] = useState(target);
+  const frame = useRef(null);
+  useEffect(() => {
+    // Extract numeric part and suffix
+    const match = String(target).match(/^([^\d]*?)([\d.,]+)(.*)$/);
+    if (!match) { setDisplay(target); return; }
+    const prefix = match[1], suffix = match[3];
+    const raw = parseFloat(match[2].replace(/,/g,''));
+    const isFloat = match[2].includes('.');
+    const decimals = isFloat ? (match[2].split('.')[1] || '').length : 0;
+    let start = null;
+    const step = ts => {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const cur = raw * ease;
+      const formatted = isFloat
+        ? cur.toFixed(decimals)
+        : Math.round(cur).toLocaleString('es-PY');
+      setDisplay(prefix + formatted + suffix);
+      if (progress < 1) frame.current = requestAnimationFrame(step);
+    };
+    frame.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame.current);
+  }, [target]);
+  return display;
+}
+
+// ── DATALABEL HELPERS ────────────────────────────────────────────────────────
+const dlBar = (dark, fmt) => ({
+  display: true,
+  color: dark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)',
+  font: { family:'DM Sans', size:11, weight:'700' },
+  anchor: 'end', align: 'end',
+  offset: 2,
+  formatter: fmt || (v => v > 0 ? v : ''),
+  clamp: true,
+});
+const dlBarInside = (fmt) => ({
+  display: true,
+  color: '#fff',
+  font: { family:'DM Sans', size:10, weight:'700' },
+  anchor: 'center', align: 'center',
+  formatter: fmt || (v => v > 0 ? v : ''),
+});
+const dlPie = () => ({
+  display: true,
+  color: '#fff',
+  font: { family:'DM Sans', size:12, weight:'800' },
+  formatter: (v) => v + '%',
+});
+const dlLine = (dark) => ({
+  display: true,
+  color: dark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)',
+  font: { family:'DM Sans', size:10, weight:'700' },
+  anchor: 'end', align: 'top', offset: 4,
+  formatter: v => v,
+});
+
+// ── DATA ────────────────────────────────────────────────────────────────────
+const COMPANIES = ['BPR','BRICK','LUPE','ROGER','OMD','NASTA','ROW','TEXO','AMPLIFY'];
+
+const DATA = {
+  nomina: {
+    kpis: [
+      {label:'Colaboradores', value:'243', sub:'Total activos'},
+      {label:'Empresas', value:'9', sub:'Grupo TEXO'},
+      {label:'Líderes', value:'60.1%', sub:'148 personas'},
+      {label:'Mujeres', value:'53.9%', sub:'131 personas'},
+      {label:'Extranjeros', value:'7.4%', sub:'18 personas'},
+      {label:'Salario Prom.', value:'₲ 6.7M', sub:'Promedio general'},
+    ],
+    genderByCompany: {
+      mujeres:[40,20,15,30,25,20,10,25,15],
+      hombres:[10,15,10,15,20,10,12,15,12]
+    },
+    nationality: {pct:[94,6], labels:['Paraguayos','Extranjeros']},
+    salary: [
+      {ring:'ANILLO 1',cat:'Gerentes y Directorio',h:19846,m:20696},
+      {ring:'ANILLO 2',cat:'Jefes y Directores',h:11442,m:13679},
+      {ring:'ANILLO 3',cat:'Coordinadores',h:6475,m:8186},
+      {ring:'ANILLO 4',cat:'Ejecutivos y Analistas',h:5520,m:5597},
+      {ring:'ANILLO 5',cat:'Asistentes y Auxiliares',h:3159,m:3531},
+      {ring:'ANILLO 6',cat:'Pasantes',h:839,m:852},
+    ],
+    generations: {labels:['Centennials','Millennials','Gen X','Boomers'],values:[18,142,68,15]},
+    foreignOrigin: {labels:['Argentina','Colombia','Venezuela','Uruguay','Países Bajos'],values:[8,4,3,2,1]},
+  },
+  reclutamiento: {
+    kpis:[
+      {label:'Vacantes Abiertas',value:'24',sub:'Este trimestre'},
+      {label:'Tiempo Prom.',value:'18d',sub:'Días a cobertura'},
+      {label:'Tasa Cierre',value:'87%',sub:'Posiciones cubiertas'},
+      {label:'Candidatos',value:'1,240',sub:'Pipeline activo'},
+      {label:'Oferta/Aceptación',value:'93%',sub:'Aceptación de oferta'},
+      {label:'Costo x Hire',value:'₲ 2.1M',sub:'Promedio'},
+    ],
+    fuentes:[
+      {label:'LinkedIn',value:38},
+      {label:'Referidos',value:28},
+      {label:'Portal RRHH',value:18},
+      {label:'Agencias',value:10},
+      {label:'Otros',value:6},
+    ],
+    trend:{
+      labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+      contratados:[8,12,7,15,11,9,13,10,14,8,12,16],
+      desvinculados:[3,5,2,4,6,3,4,2,5,3,4,6],
+    },
+    byCompany:{
+      labels:COMPANIES,
+      values:[4,3,2,5,3,2,1,3,1],
+    }
+  },
+  rotacion: {
+    kpis:[
+      {label:'Tasa Rotación',value:'12.4%',sub:'Últimos 12 meses'},
+      {label:'Voluntaria',value:'8.1%',sub:'Renuncias'},
+      {label:'Involuntaria',value:'4.3%',sub:'Desvinculaciones'},
+      {label:'Retención',value:'87.6%',sub:'Colaboradores activos'},
+      {label:'Ausentismo',value:'2.1%',sub:'Promedio mensual'},
+      {label:'Antigüedad Prom.',value:'3.2a',sub:'Años en empresa'},
+    ],
+    monthly:{
+      labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+      ingresos:[8,12,7,15,11,9,13,10,14,8,12,16],
+      egresos:[3,5,2,4,6,3,4,2,5,3,4,6],
+    },
+    causas:{
+      labels:['Mejor oportunidad','Salario','Relación jefe','Clima laboral','Personal','Otro'],
+      values:[35,28,15,12,6,4]
+    },
+    byCompany:{
+      labels:COMPANIES,
+      ingreso:[4,3,2,5,3,2,1,3,1],
+      egreso:[1,2,1,2,2,1,0,2,1]
+    }
+  },
+  costos: {
+    kpis:[
+      {label:'Costo Nómina',value:'₲ 1.6B',sub:'Mes actual'},
+      {label:'Ingreso Prom.',value:'₲ 2.1M',sub:'Por colaborador'},
+      {label:'Desvinculación',value:'₲ 1.8M',sub:'Costo promedio'},
+      {label:'Beneficios',value:'₲ 180M',sub:'Total mensual'},
+      {label:'Δ vs Mes Ant.',value:'+3.2%',sub:'Variación nómina'},
+      {label:'Budget Usado',value:'78%',sub:'Del presupuesto RRHH'},
+    ],
+    nominaTrend:{
+      labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+      values:[1420,1445,1430,1490,1510,1480,1530,1550,1520,1580,1610,1640],
+    },
+    breakdown:{
+      labels:['Salarios','Beneficios','Bonos','Formación','Reclutamiento','Otros'],
+      values:[68,14,8,4,3,3],
+    },
+    byCompany:{
+      labels:COMPANIES,
+      values:[320,180,95,240,210,130,70,210,140],
+    }
+  }
+};
+
+// ── CHART COMPONENT ─────────────────────────────────────────────────────────
+function ChartComp({ type, data, options, chartKey }) {
+  const canvasRef = useRef(null);
+  const instanceRef = useRef(null);
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    if (instanceRef.current) { instanceRef.current.destroy(); instanceRef.current = null; }
+    instanceRef.current = new Chart(canvasRef.current, { type, data, options });
+    return () => { if (instanceRef.current) instanceRef.current.destroy(); };
+  }, [chartKey]);
+  return <canvas ref={canvasRef} />;
+}
+
+// ── KPI CARD ────────────────────────────────────────────────────────────────
+function KPICard({ label, value, sub, change, accent }) {
+  const animated = useCountUp(value);
+  return (
+    <div className="kpi-card">
+      <div className="kpi-label">{label}</div>
+      <div className={`kpi-value ${accent ? 'accent' : ''}`}>{animated}</div>
+      {sub && <div className="kpi-sub">{sub}</div>}
+      {change && <div className={`kpi-change ${change.startsWith('+') ? 'up' : 'down'}`}>{change}</div>}
+    </div>
+  );
+}
+
+// ── CHART CARD ──────────────────────────────────────────────────────────────
+function ChartCard({ title, children, span2, legend }) {
+  return (
+    <div className={`chart-card ${span2 ? 'span2' : ''}`}>
+      <div className="chart-title">{title}</div>
+      {legend && <div className="legend">{legend.map(l => <div key={l.label} className="legend-item"><div className="legend-dot" style={{background:l.color}} />{l.label}</div>)}</div>}
+      <div className="chart-wrap">{children}</div>
+    </div>
+  );
+}
+
+// ── THEME HELPERS ────────────────────────────────────────────────────────────
+function getChartDefaults(dark) {
+  const gridColor = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+  const tickColor = dark ? '#6b7a99' : '#94a3b8';
+  return {
+    gridColor, tickColor,
+    plugins: { legend: { display: false }, tooltip: { titleFont:{family:'DM Sans',size:13}, bodyFont:{family:'DM Sans',size:12} }, datalabels: { display: false } },
+    scales: {
+      x: { grid:{color:gridColor}, ticks:{color:tickColor,font:{family:'DM Sans',size:11}} },
+      y: { grid:{color:gridColor}, ticks:{color:tickColor,font:{family:'DM Sans',size:11}} },
+    }
+  };
+}
+
+// ── TABBAR COMPONENT ─────────────────────────────────────────────────────────
+function TabBar({ tabs, active, onChange }) {
+  return (
+    <div style={{display:'flex',gap:0,borderBottom:'1px solid var(--border)'}}>
+      {tabs.map(t => (
+        <div key={t.id} onClick={()=>onChange(t.id)} style={{
+          padding:'10px 18px', cursor:'pointer', fontSize:13, fontWeight:600,
+          color: active===t.id ? 'var(--accent)' : 'var(--text2)',
+          borderBottom: active===t.id ? '2px solid var(--accent)' : '2px solid transparent',
+          transition:'all .15s', whiteSpace:'nowrap'
+        }}>{t.label}</div>
+      ))}
+    </div>
+  );
+}
+function TabContent({ tabKey, children }) {
+  return <div key={tabKey} className="tab-content">{children}</div>;
+}
+
+// ── NOMINA MODULE ────────────────────────────────────────────────────────────
+function ModuleNomina({ dark, fontSize }) {
+  const d = DATA.nomina;
+  const def = getChartDefaults(dark);
+  const ck = dark ? 'dark' : 'light';
+  const [tab, setTab] = useState('distribucion');
+  const PINK = '#d946ef', INDIGO = '#818cf8';
+
+  const TABS = [
+    {id:'distribucion', label:'Distribución'},
+    {id:'salarios',     label:'Salarios'},
+    {id:'demografia',   label:'Demografía'},
+    {id:'liderazgo',    label:'Liderazgo'},
+  ];
+
+  const genderDonut = {
+    data: { labels:['Mujeres','Hombres'], datasets:[{ data:[53.9,46.1], backgroundColor:[PINK, INDIGO], borderWidth:0, hoverOffset:6 }] },
+    options: { cutout:'68%', plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw}%`}}, datalabels: dlPie() }, animation:{duration:600} }
+  };
+  const genderBar = {
+    data: { labels:COMPANIES, datasets:[
+      { label:'Mujeres', data:d.genderByCompany.mujeres, backgroundColor:PINK+'cc', borderRadius:4 },
+      { label:'Hombres', data:d.genderByCompany.hombres, backgroundColor:INDIGO+'cc', borderRadius:4 },
+    ]},
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBarInside()}, scales:def.scales, responsive:true, maintainAspectRatio:false }
+  };
+  const salaryBar = {
+    data: { labels:d.salary.map(s=>s.cat.split(' ').slice(0,2).join('\n')), datasets:[
+      { label:'Hombres', data:d.salary.map(s=>s.h), backgroundColor:INDIGO+'cc', borderRadius:4 },
+      { label:'Mujeres', data:d.salary.map(s=>s.m), backgroundColor:PINK+'cc', borderRadius:4 },
+    ]},
+    options: { ...def, indexAxis:'y', plugins:{...def.plugins, datalabels: dlBarInside(v => v > 0 ? '₲'+Math.round(v/1000)+'k' : '')}, scales:{ ...def.scales, x:{...def.scales.x, ticks:{...def.scales.x.ticks, callback:v=>'₲'+Math.round(v/1000)+'k'}}, y:{...def.scales.y,ticks:{...def.scales.y.ticks,font:{size:10,family:'DM Sans'}}} }, responsive:true, maintainAspectRatio:false }
+  };
+  const genBar = {
+    data: { labels:d.generations.labels, datasets:[{ data:d.generations.values, backgroundColor:['#7c5af6','#d946ef','#06b6d4','#10b981'], borderRadius:6 }] },
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBar(dark)}, scales:def.scales, responsive:true, maintainAspectRatio:false }
+  };
+  const foreignBar = {
+    data: { labels:d.foreignOrigin.labels, datasets:[{ data:d.foreignOrigin.values, backgroundColor:['#f59e0b','#06b6d4','#10b981','#7c5af6','#ef4444'], borderRadius:6 }] },
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBar(dark)}, scales:def.scales, responsive:true, maintainAspectRatio:false }
+  };
+  const liderazgoBar = {
+    data: { labels:['Hombres','Mujeres'], datasets:[{ data:[59,41], backgroundColor:[INDIGO+'cc', PINK+'cc'], borderRadius:8, barThickness:60 }] },
+    options: { ...def, indexAxis:'y', plugins:{...def.plugins, datalabels: dlBarInside(v=>v+'%')}, scales:{ ...def.scales, x:{...def.scales.x,min:0,max:100,ticks:{...def.scales.x.ticks,callback:v=>v+'%'}}, y:def.scales.y }, responsive:true, maintainAspectRatio:false }
+  };
+  const anillosBar = {
+    data: { labels:['Hombres','Mujeres'], datasets:[
+      { label:'Anillo 3', data:[7,7], backgroundColor:'#10b981', borderRadius:4 },
+      { label:'Anillo 2', data:[22,7], backgroundColor:'#1a4a8a', borderRadius:4 },
+      { label:'Anillo 1', data:[15,16], backgroundColor:'#f59e0b', borderRadius:4 },
+    ]},
+    options: { ...def, indexAxis:'y', plugins:{...def.plugins, datalabels: dlBarInside()}, scales:{ ...def.scales, x:{...def.scales.x}, y:def.scales.y }, responsive:true, maintainAspectRatio:false }
+  };
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+      <div className="kpi-grid">{d.kpis.map((k,i) => <KPICard key={i} {...k} accent={i===0} />)}</div>
+      <TabBar tabs={TABS} active={tab} onChange={setTab} />
+      <div key={tab} className="tab-content" style={{display:"flex",flexDirection:"column",gap:16}}>
+      {tab==='distribucion' && (
+        <div style={{display:'flex',flexDirection:'column',gap:16}}>
+          {/* BIG GENDER STAT ROW */}
+          <div className="chart-card" style={{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:48,padding:'28px 32px'}}>
+            {/* Mujeres */}
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+              <svg width="60" height="90" viewBox="0 0 60 90" fill="none">
+                {/* Female pictogram */}
+                <circle cx="30" cy="13" r="11" fill={PINK}/>
+                {/* Dress */}
+                <path d="M14 32 L22 28 L30 30 L38 28 L46 32 L40 72 L20 72 Z" fill={PINK} opacity="0.9"/>
+                {/* Arms */}
+                <line x1="14" y1="32" x2="6" y2="50" stroke={PINK} strokeWidth="5" strokeLinecap="round"/>
+                <line x1="46" y1="32" x2="54" y2="50" stroke={PINK} strokeWidth="5" strokeLinecap="round"/>
+              </svg>
+              <div style={{fontSize:52,fontWeight:800,color:PINK,lineHeight:1,letterSpacing:'-2px'}}>131</div>
+              <div style={{fontSize:22,fontWeight:700,color:PINK}}>53.9%</div>
+              <div style={{fontSize:13,color:'var(--text2)',fontWeight:500}}>Mujeres</div>
+            </div>
+
+            {/* Divider */}
+            <div style={{width:1,height:120,background:'var(--border)'}}/>
+
+            {/* Total */}
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <div style={{fontSize:14,fontWeight:600,color:'var(--text2)',letterSpacing:'2px',textTransform:'uppercase'}}>Total</div>
+              <div style={{fontSize:64,fontWeight:800,color:'var(--text)',lineHeight:1,letterSpacing:'-3px'}}>243</div>
+              <div style={{fontSize:12,color:'var(--text2)'}}>Colaboradores</div>
+            </div>
+
+            {/* Divider */}
+            <div style={{width:1,height:120,background:'var(--border)'}}/>
+
+            {/* Hombres */}
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+              <svg width="60" height="90" viewBox="0 0 60 90" fill="none">
+                {/* Male pictogram */}
+                <circle cx="30" cy="13" r="11" fill={INDIGO}/>
+                {/* Torso */}
+                <rect x="16" y="27" width="28" height="26" rx="4" fill={INDIGO} opacity="0.9"/>
+                {/* Arms */}
+                <line x1="16" y1="30" x2="6" y2="50" stroke={INDIGO} strokeWidth="5" strokeLinecap="round"/>
+                <line x1="44" y1="30" x2="54" y2="50" stroke={INDIGO} strokeWidth="5" strokeLinecap="round"/>
+                {/* Legs */}
+                <rect x="16" y="53" width="12" height="26" rx="4" fill={INDIGO} opacity="0.9"/>
+                <rect x="32" y="53" width="12" height="26" rx="4" fill={INDIGO} opacity="0.9"/>
+              </svg>
+              <div style={{fontSize:52,fontWeight:800,color:INDIGO,lineHeight:1,letterSpacing:'-2px'}}>112</div>
+              <div style={{fontSize:22,fontWeight:700,color:INDIGO}}>46.1%</div>
+              <div style={{fontSize:13,color:'var(--text2)',fontWeight:500}}>Hombres</div>
+            </div>
+          </div>
+
+          <div className="chart-grid-2">
+            <ChartCard title="DISTRIBUCIÓN POR GÉNERO" legend={[{label:'Mujeres',color:PINK},{label:'Hombres',color:INDIGO}]}>
+              <div style={{display:'flex',alignItems:'center',gap:24}}>
+                <div style={{width:200,height:200,flexShrink:0}}>
+                  <ChartComp type="doughnut" data={genderDonut.data} options={genderDonut.options} chartKey={ck+'gd'} />
+                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:20}}>
+                  <div><div style={{fontSize:fontSize*1.4+'px',fontWeight:800,color:PINK,lineHeight:1}}>53.9%</div><div style={{fontSize:12,color:'var(--text2)'}}>Mujeres · 131</div></div>
+                  <div><div style={{fontSize:fontSize*1.4+'px',fontWeight:800,color:INDIGO,lineHeight:1}}>46.1%</div><div style={{fontSize:12,color:'var(--text2)'}}>Hombres · 112</div></div>
+                </div>
+              </div>
+            </ChartCard>
+            <ChartCard title="GÉNERO POR EMPRESA" legend={[{label:'Mujeres',color:PINK},{label:'Hombres',color:INDIGO}]}>
+              <div style={{height:220}}><ChartComp type="bar" data={genderBar.data} options={genderBar.options} chartKey={ck+'gb'} /></div>
+            </ChartCard>
+          </div>
+        </div>
+      )}
+
+      {tab==='salarios' && (
+        <div style={{display:'flex',flexDirection:'column',gap:16}}>
+          <ChartCard title="DISTRIBUCIÓN SALARIAL POR NIVEL" legend={[{label:'Hombres',color:INDIGO},{label:'Mujeres',color:PINK}]}>
+            <div style={{height:260}}><ChartComp type="bar" data={salaryBar.data} options={salaryBar.options} chartKey={ck+'sb'} /></div>
+            <table className="salary-table">
+              <thead><tr><th>Anillo</th><th>Categoría</th><th>Hombres ₲</th><th>Mujeres ₲</th><th>Brecha</th></tr></thead>
+              <tbody>{d.salary.map(r => {
+                const gap = Math.round((r.m-r.h)/r.h*100);
+                return <tr key={r.ring}><td><span className="badge badge-purple">{r.ring}</span></td><td>{r.cat}</td><td>{r.h.toLocaleString()}</td><td>{r.m.toLocaleString()}</td><td className={gap>0?'gap-neg':'gap-pos'}>{gap>0?`-${gap}%`:`+${Math.abs(gap)}%`}</td></tr>;
+              })}</tbody>
+            </table>
+          </ChartCard>
+        </div>
+      )}
+
+      {tab==='demografia' && (
+        <div className="chart-grid-2">
+          <ChartCard title="GENERACIONES">
+            <div style={{height:220}}><ChartComp type="bar" data={genBar.data} options={genBar.options} chartKey={ck+'gen'} /></div>
+          </ChartCard>
+          <ChartCard title="EXTRANJEROS POR NACIONALIDAD">
+            <div style={{height:220}}><ChartComp type="bar" data={foreignBar.data} options={foreignBar.options} chartKey={ck+'fob'} /></div>
+          </ChartCard>
+        </div>
+      )}
+
+      {tab==='liderazgo' && (
+        <div className="chart-grid-2">
+          <ChartCard title="DISTRIBUCIÓN DE GÉNERO EN LIDERAZGO">
+            <div style={{height:160}}><ChartComp type="bar" data={liderazgoBar.data} options={liderazgoBar.options} chartKey={ck+'lid'} /></div>
+            <div style={{display:'flex',gap:32,justifyContent:'center',paddingTop:8}}>
+              <div style={{textAlign:'center'}}><div style={{fontSize:52,fontWeight:800,color:INDIGO,lineHeight:1}}>59%</div><div style={{fontSize:12,color:'var(--text2)'}}>Hombres</div></div>
+              <div style={{textAlign:'center'}}><div style={{fontSize:52,fontWeight:800,color:PINK,lineHeight:1}}>41%</div><div style={{fontSize:12,color:'var(--text2)'}}>Mujeres</div></div>
+            </div>
+          </ChartCard>
+          <ChartCard title="LIDERAZGO POR ANILLO" legend={[{label:'Anillo 1',color:'#f59e0b'},{label:'Anillo 2',color:'#1a4a8a'},{label:'Anillo 3',color:'#10b981'}]}>
+            <div style={{height:220}}><ChartComp type="bar" data={anillosBar.data} options={anillosBar.options} chartKey={ck+'ani'} /></div>
+          </ChartCard>
+        </div>
+      )}
+      </div>
+    </div>
+  );
+}
+
+// ── RECLUTAMIENTO MODULE ─────────────────────────────────────────────────────
+function ModuleReclutamiento({ dark, fontSize }) {
+  const d = DATA.reclutamiento;
+  const def = getChartDefaults(dark);
+  const ck = dark ? 'dark' : 'light';
+  const [tab, setTab] = useState('general');
+  const TABS = [
+    {id:'general',  label:'General'},
+    {id:'fuentes',  label:'Fuentes'},
+    {id:'vacantes', label:'Vacantes'},
+    {id:'tiempos',  label:'Tiempos'},
+  ];
+
+  const trendLine = {
+    data: { labels:d.trend.labels, datasets:[
+      { label:'Contratados', data:d.trend.contratados, borderColor:'#10b981', backgroundColor:'rgba(16,185,129,.08)', fill:true, tension:.4, pointRadius:4 },
+      { label:'Desvinculados', data:d.trend.desvinculados, borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.08)', fill:true, tension:.4, pointRadius:4 },
+    ]},
+    options: { ...def, responsive:true, maintainAspectRatio:false, plugins:{ ...def.plugins, datalabels: dlLine(dark) } }
+  };
+  const fuentesPie = {
+    data: { labels:d.fuentes.map(f=>f.label), datasets:[{ data:d.fuentes.map(f=>f.value), backgroundColor:['#7c5af6','#10b981','#06b6d4','#f59e0b','#6b7a99'], borderWidth:0 }] },
+    options: { plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw}%`}}, datalabels: dlPie() } }
+  };
+  const vacBar = {
+    data: { labels:d.byCompany.labels, datasets:[{ data:d.byCompany.values, backgroundColor:'rgba(124,90,246,.7)', borderRadius:6 }] },
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBar(dark)}, scales:def.scales, responsive:true, maintainAspectRatio:false }
+  };
+  const tiempoBar = {
+    data: { labels:COMPANIES, datasets:[{ data:[22,18,15,24,17,20,14,16,19], backgroundColor:'rgba(6,182,212,.7)', borderRadius:6 }] },
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBar(dark, v=>v+'d')}, scales:{ ...def.scales, y:{...def.scales.y,ticks:{...def.scales.y.ticks,callback:v=>v+'d'}} }, responsive:true, maintainAspectRatio:false }
+  };
+  const funnelData = [
+    {label:'Candidatos recibidos', val:1240, color:'#7c5af6'},
+    {label:'Preseleccionados',     val:480,  color:'#818cf8'},
+    {label:'Entrevistas',          val:210,  color:'#06b6d4'},
+    {label:'Ofertas enviadas',     val:56,   color:'#10b981'},
+    {label:'Contratados',          val:52,   color:'#34d399'},
+  ];
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+      <div className="kpi-grid">{d.kpis.map((k,i) => <KPICard key={i} {...k} />)}</div>
+      <TabBar tabs={TABS} active={tab} onChange={setTab} />
+      <div key={tab} className="tab-content" style={{display:"flex",flexDirection:"column",gap:16}}>
+      {tab==='general' && (
+        <ChartCard title="CONTRATADOS VS DESVINCULADOS — 12 MESES" legend={[{label:'Contratados',color:'#10b981'},{label:'Desvinculados',color:'#ef4444'}]}>
+          <div style={{height:280}}><ChartComp type="line" data={trendLine.data} options={trendLine.options} chartKey={ck+'tl'} /></div>
+        </ChartCard>
+      )}
+
+      {tab==='fuentes' && (
+        <div className="chart-grid-2">
+          <ChartCard title="FUENTES DE RECLUTAMIENTO" legend={d.fuentes.map((f,i)=>({label:`${f.label} ${f.value}%`,color:['#7c5af6','#10b981','#06b6d4','#f59e0b','#6b7a99'][i]}))}>
+            <div style={{display:'flex',alignItems:'center',gap:24}}>
+              <div style={{width:200,height:200,flexShrink:0}}><ChartComp type="pie" data={fuentesPie.data} options={fuentesPie.options} chartKey={ck+'fp'} /></div>
+              <div style={{flex:1,display:'flex',flexDirection:'column',gap:10}}>
+                {d.fuentes.map((f,i) => (
+                  <div key={f.label} style={{display:'flex',alignItems:'center',gap:10}}>
+                    <div style={{width:8,height:8,borderRadius:'50%',background:['#7c5af6','#10b981','#06b6d4','#f59e0b','#6b7a99'][i],flexShrink:0}} />
+                    <div style={{fontSize:13,color:'var(--text)',flex:1}}>{f.label}</div>
+                    <div style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>{f.value}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </ChartCard>
+          <ChartCard title="EMBUDO DE RECLUTAMIENTO">
+            <div style={{display:'flex',flexDirection:'column',gap:10,paddingTop:8}}>
+              {funnelData.map(f => (
+                <div key={f.label}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                    <span style={{fontSize:12,color:'var(--text)'}}>{f.label}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:f.color}}>{f.val.toLocaleString()}</span>
+                  </div>
+                  <div style={{height:8,background:'var(--border)',borderRadius:99,overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${f.val/1240*100}%`,background:f.color,borderRadius:99}} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ChartCard>
+        </div>
+      )}
+
+      {tab==='vacantes' && (
+        <ChartCard title="VACANTES ABIERTAS POR EMPRESA">
+          <div style={{height:280}}><ChartComp type="bar" data={vacBar.data} options={vacBar.options} chartKey={ck+'vac'} /></div>
+        </ChartCard>
+      )}
+
+      {tab==='tiempos' && (
+        <ChartCard title="TIEMPO PROMEDIO DE COBERTURA POR EMPRESA (días)">
+          <div style={{height:280}}><ChartComp type="bar" data={tiempoBar.data} options={tiempoBar.options} chartKey={ck+'tpo'} /></div>
+        </ChartCard>
+      )}
+      </div>
+    </div>
+  );
+}
+
+// ── ROTACION MODULE ──────────────────────────────────────────────────────────
+function ModuleRotacion({ dark, fontSize }) {
+  const d = DATA.rotacion;
+  const def = getChartDefaults(dark);
+  const ck = dark ? 'dark' : 'light';
+  const [tab, setTab] = useState('general');
+
+  const TABS = [
+    {id:'general', label:'Rotación General'},
+    {id:'empresa', label:'Por Empresa'},
+    {id:'cargo', label:'Por Cargo / Área'},
+    {id:'tendencia', label:'Tendencia'},
+    {id:'entrevistas', label:'Entrevistas de Salida'},
+    {id:'detalle', label:'Detalle'},
+  ];
+
+  // Chart configs
+  const voluntariaDonut = {
+    data: { labels:['Voluntaria','Involuntaria'], datasets:[{ data:[61,22], backgroundColor:['#6366f1','#10b981'], borderWidth:0 }] },
+    options: { cutout:'60%', plugins:{ legend:{display:false}, datalabels: dlPie() } }
+  };
+  const motivosBar = {
+    data: { labels:['Renuncia','Despido injustificado','Fin contrato (per. prueba)','Fin contrato (permanente)','Terminación de contrato','Contrato (período de prueba)'],
+      datasets:[{ data:[38,14,6,5,4,3], backgroundColor:['#6366f1','#10b981','#f59e0b','#d946ef','#06b6d4','#ef4444'], borderRadius:4 }] },
+    options: { ...def, indexAxis:'y', plugins:{...def.plugins, datalabels: dlBar(dark)}, scales:{ ...def.scales, x:{...def.scales.x}, y:{...def.scales.y,ticks:{...def.scales.y.ticks,font:{size:10,family:'DM Sans'}}} }, responsive:true, maintainAspectRatio:false }
+  };
+  const byEmpresaBar = {
+    data: { labels:COMPANIES, datasets:[
+      { label:'Ingresos', data:d.byCompany.ingreso, backgroundColor:'rgba(99,102,241,.8)', borderRadius:4 },
+      { label:'Egresos', data:d.byCompany.egreso, backgroundColor:'rgba(239,68,68,.8)', borderRadius:4 },
+    ]},
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBar(dark)}, scales:def.scales, responsive:true, maintainAspectRatio:false }
+  };
+  const tasaEmpresaBar = {
+    data: { labels:COMPANIES, datasets:[{ data:[18,12,8,15,11,14,9,10,7], backgroundColor:'rgba(99,102,241,.75)', borderRadius:4 }] },
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBar(dark, v => v+'%')}, scales:{ ...def.scales, y:{...def.scales.y,ticks:{...def.scales.y.ticks,callback:v=>v+'%'}} }, responsive:true, maintainAspectRatio:false }
+  };
+  const cargoBar = {
+    data: { labels:['Gerentes y Dir.','Jefes y Dir.','Coordinadores','Ejecutivos','Asistentes','Pasantes'],
+      datasets:[{ data:[2,5,8,14,22,10], backgroundColor:['#7c5af6','#d946ef','#f59e0b','#06b6d4','#10b981','#6b7a99'], borderRadius:4 }] },
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBar(dark)}, scales:def.scales, responsive:true, maintainAspectRatio:false }
+  };
+  const areaBar = {
+    data: { labels:['Comercial','Operaciones','Tecnología','RRHH','Finanzas','Marketing'],
+      datasets:[{ data:[18,15,12,8,6,2], backgroundColor:'rgba(217,70,239,.7)', borderRadius:4 }] },
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBar(dark)}, scales:def.scales, responsive:true, maintainAspectRatio:false }
+  };
+  const tendenciaLine = {
+    data: { labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+      datasets:[
+        { label:'Tasa Rotación %', data:[10.2,11.5,9.8,12.1,13.0,11.8,12.4,10.9,13.2,11.5,12.0,12.4], borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,.1)', fill:true, tension:.4, pointRadius:4, yAxisID:'y' },
+        { label:'Ingresos', data:[8,12,7,15,11,9,13,10,14,8,12,16], borderColor:'#10b981', tension:.4, pointRadius:3, borderDash:[4,3], yAxisID:'y2' },
+        { label:'Egresos', data:[3,5,2,4,6,3,4,2,5,3,4,6], borderColor:'#ef4444', tension:.4, pointRadius:3, borderDash:[4,3], yAxisID:'y2' },
+      ]},
+    options: { ...def, responsive:true, maintainAspectRatio:false,
+      plugins:{...def.plugins, datalabels:{ display:false }},
+      scales:{ x:def.scales.x,
+        y:{...def.scales.y, position:'left', title:{display:true,text:'Tasa %',color:def.tickColor,font:{size:10}}},
+        y2:{...def.scales.y, position:'right', grid:{display:false}, title:{display:true,text:'Personas',color:def.tickColor,font:{size:10}}} } }
+  };
+  const satisfaccionBar = {
+    data: { labels:['Clima laboral','Liderazgo','Compensación','Crecimiento','Balance vida'],
+      datasets:[{ data:[6.2,7.1,5.8,5.4,7.8], backgroundColor:['#ef4444','#f59e0b','#ef4444','#ef4444','#10b981'], borderRadius:6 }] },
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBar(dark, v=>v+'/10')}, scales:{ ...def.scales, y:{...def.scales.y,min:0,max:10} }, responsive:true, maintainAspectRatio:false }
+  };
+  const recomendarPie = {
+    data: { labels:['Sí recomendaría','No recomendaría','NS/NC'], datasets:[{ data:[52,33,15], backgroundColor:['#10b981','#ef4444','#6b7a99'], borderWidth:0 }] },
+    options: { cutout:'55%', plugins:{ legend:{display:false}, datalabels: dlPie() } }
+  };
+
+  const DETALLE = [
+    {nombre:'Juan Pérez',empresa:'TEXO',cargo:'Coordinador',tipo:'Voluntaria',motivo:'Mejor oportunidad',fecha:'15/01/2025',permanencia:'2.5 años'},
+    {nombre:'María García',empresa:'BPR',cargo:'Ejecutiva',tipo:'Voluntaria',motivo:'Salario',fecha:'03/02/2025',permanencia:'1.2 años'},
+    {nombre:'Carlos López',empresa:'ROGER',cargo:'Analista',tipo:'Involuntaria',motivo:'Fin de contrato',fecha:'28/02/2025',permanencia:'0.8 años'},
+    {nombre:'Ana Martínez',empresa:'AMPLIFY',cargo:'Asistente',tipo:'Voluntaria',motivo:'Motivos personales',fecha:'10/03/2025',permanencia:'3.1 años'},
+    {nombre:'Luis Torres',empresa:'NASTA',cargo:'Jefe de Área',tipo:'Involuntaria',motivo:'Reestructuración',fecha:'22/03/2025',permanencia:'4.0 años'},
+    {nombre:'Sofia Ruiz',empresa:'BRICK',cargo:'Coordinadora',tipo:'Voluntaria',motivo:'Mejora salarial',fecha:'05/04/2025',permanencia:'1.7 años'},
+    {nombre:'Diego Sánchez',empresa:'OMD',cargo:'Analista Sr.',tipo:'Voluntaria',motivo:'Emprendimiento',fecha:'18/04/2025',permanencia:'2.9 años'},
+  ];
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+      <div className="kpi-grid">{d.kpis.map((k,i) => <KPICard key={i} {...k} />)}</div>
+
+      {/* TAB BAR */}
+      <TabBar tabs={TABS} active={tab} onChange={setTab} />
+      <div key={tab} className="tab-content" style={{display:"flex",flexDirection:"column",gap:16}}>
+      {/* TAB: GENERAL */}
+      {tab==='general' && (
+        <div className="chart-grid-2">
+          <ChartCard title="VOLUNTARIA VS INVOLUNTARIA" legend={[{label:'Voluntaria',color:'#6366f1'},{label:'Involuntaria',color:'#10b981'}]}>
+            <div style={{display:'flex',alignItems:'center',gap:24}}>
+              <div style={{width:200,height:200,flexShrink:0}}>
+                <ChartComp type="doughnut" data={voluntariaDonut.data} options={voluntariaDonut.options} chartKey={ck+'vd'} />
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:16}}>
+                <div><div style={{fontSize:42,fontWeight:800,color:'#6366f1',lineHeight:1}}>61</div><div style={{fontSize:12,color:'var(--text2)'}}>Voluntarias · 73.5%</div></div>
+                <div><div style={{fontSize:42,fontWeight:800,color:'#10b981',lineHeight:1}}>22</div><div style={{fontSize:12,color:'var(--text2)'}}>Involuntarias · 26.5%</div></div>
+              </div>
+            </div>
+          </ChartCard>
+          <ChartCard title="TOP MOTIVOS DE SALIDA">
+            <div style={{height:260}}>
+              <ChartComp type="bar" data={motivosBar.data} options={motivosBar.options} chartKey={ck+'mot'} />
+            </div>
+          </ChartCard>
+        </div>
+      )}
+
+      {/* TAB: POR EMPRESA */}
+      {tab==='empresa' && (
+        <div className="chart-grid-2">
+          <ChartCard title="INGRESOS VS EGRESOS POR EMPRESA" span2 legend={[{label:'Ingresos',color:'#6366f1'},{label:'Egresos',color:'#ef4444'}]}>
+            <div style={{height:260}}>
+              <ChartComp type="bar" data={byEmpresaBar.data} options={byEmpresaBar.options} chartKey={ck+'beb'} />
+            </div>
+          </ChartCard>
+          <ChartCard title="TASA DE ROTACIÓN POR EMPRESA (%)" span2>
+            <div style={{height:220}}>
+              <ChartComp type="bar" data={tasaEmpresaBar.data} options={tasaEmpresaBar.options} chartKey={ck+'teb'} />
+            </div>
+          </ChartCard>
+        </div>
+      )}
+
+      {/* TAB: POR CARGO/ÁREA */}
+      {tab==='cargo' && (
+        <div className="chart-grid-2">
+          <ChartCard title="SALIDAS POR NIVEL / CARGO">
+            <div style={{height:260}}>
+              <ChartComp type="bar" data={cargoBar.data} options={cargoBar.options} chartKey={ck+'carb'} />
+            </div>
+          </ChartCard>
+          <ChartCard title="SALIDAS POR ÁREA">
+            <div style={{height:260}}>
+              <ChartComp type="bar" data={areaBar.data} options={areaBar.options} chartKey={ck+'arb'} />
+            </div>
+          </ChartCard>
+        </div>
+      )}
+
+      {/* TAB: TENDENCIA */}
+      {tab==='tendencia' && (
+        <ChartCard title="TENDENCIA DE ROTACIÓN — 12 MESES" span2 legend={[{label:'Tasa %',color:'#6366f1'},{label:'Ingresos',color:'#10b981'},{label:'Egresos',color:'#ef4444'}]}>
+          <div style={{height:320}}>
+            <ChartComp type="line" data={tendenciaLine.data} options={tendenciaLine.options} chartKey={ck+'tl2'} />
+          </div>
+        </ChartCard>
+      )}
+
+      {/* TAB: ENTREVISTAS DE SALIDA */}
+      {tab==='entrevistas' && (
+        <div className="chart-grid-2">
+          <ChartCard title="SATISFACCIÓN EN ENTREVISTA DE SALIDA (escala 1-10)">
+            <div style={{height:260}}>
+              <ChartComp type="bar" data={satisfaccionBar.data} options={satisfaccionBar.options} chartKey={ck+'sat'} />
+            </div>
+          </ChartCard>
+          <ChartCard title="¿RECOMENDARÍAS LA EMPRESA?" legend={[{label:'Sí',color:'#10b981'},{label:'No',color:'#ef4444'},{label:'NS/NC',color:'#6b7a99'}]}>
+            <div style={{display:'flex',alignItems:'center',gap:24}}>
+              <div style={{width:200,height:200,flexShrink:0}}>
+                <ChartComp type="doughnut" data={recomendarPie.data} options={recomendarPie.options} chartKey={ck+'reco'} />
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                {[{label:'Sí recomendaría',val:52,color:'#10b981'},{label:'No recomendaría',val:33,color:'#ef4444'},{label:'NS/NC',val:15,color:'#6b7a99'}].map(r=>(
+                  <div key={r.label}><div style={{fontSize:32,fontWeight:800,color:r.color,lineHeight:1}}>{r.val}%</div><div style={{fontSize:11,color:'var(--text2)'}}>{r.label}</div></div>
+                ))}
+              </div>
+            </div>
+          </ChartCard>
+        </div>
+      )}
+
+      {/* TAB: DETALLE */}
+      {tab==='detalle' && (
+        <div className="chart-card">
+          <div className="chart-title">DETALLE DE DESVINCULACIONES 2025</div>
+          <table className="salary-table" style={{fontSize:13}}>
+            <thead><tr><th>Nombre</th><th>Empresa</th><th>Cargo</th><th>Tipo</th><th>Motivo</th><th>Fecha</th><th>Permanencia</th></tr></thead>
+            <tbody>{DETALLE.map((r,i)=>(
+              <tr key={i}>
+                <td style={{fontWeight:600}}>{r.nombre}</td>
+                <td><span className="badge badge-purple">{r.empresa}</span></td>
+                <td>{r.cargo}</td>
+                <td><span className={`badge ${r.tipo==='Voluntaria'?'badge-purple':'badge-red'}`}>{r.tipo}</span></td>
+                <td>{r.motivo}</td>
+                <td>{r.fecha}</td>
+                <td>{r.permanencia}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
+      </div>
+    </div>
+  );
+}
+
+// ── COSTOS MODULE ────────────────────────────────────────────────────────────
+function ModuleCostos({ dark, fontSize }) {
+  const d = DATA.costos;
+  const def = getChartDefaults(dark);
+  const ck = dark ? 'dark' : 'light';
+  const [tab, setTab] = useState('tendencia');
+  const TABS = [
+    {id:'tendencia',   label:'Tendencia'},
+    {id:'composicion', label:'Composición'},
+    {id:'empresa',     label:'Por Empresa'},
+    {id:'presupuesto', label:'Presupuesto'},
+  ];
+
+  const trendLine = {
+    data: { labels:d.nominaTrend.labels, datasets:[{
+      label:'Nómina (M₲)', data:d.nominaTrend.values,
+      borderColor:'#7c5af6', backgroundColor:'rgba(124,90,246,.1)',
+      fill:true, tension:.4, pointRadius:4, pointBackgroundColor:'#7c5af6'
+    }]},
+    options: { ...def, responsive:true, maintainAspectRatio:false, plugins:{...def.plugins, datalabels: dlLine(dark)} }
+  };
+  const breakPie = {
+    data: { labels:d.breakdown.labels, datasets:[{ data:d.breakdown.values, backgroundColor:['#7c5af6','#d946ef','#10b981','#06b6d4','#f59e0b','#6b7a99'], borderWidth:0 }] },
+    options: { plugins:{ legend:{display:false}, datalabels: dlPie() } }
+  };
+  const companyBar = {
+    data: { labels:d.byCompany.labels, datasets:[{ data:d.byCompany.values, backgroundColor:'rgba(124,90,246,.7)', borderRadius:6 }] },
+    options: { ...def, plugins:{...def.plugins, datalabels: dlBar(dark, v => v+'M')}, responsive:true, maintainAspectRatio:false, scales:{ ...def.scales, y:{ ...def.scales.y, ticks:{...def.scales.y.ticks, callback:v=>v+'M'}} } }
+  };
+  const budgetData = [
+    {label:'Salarios',        budget:1200, real:1150, color:'#7c5af6'},
+    {label:'Beneficios',      budget:210,  real:185,  color:'#d946ef'},
+    {label:'Bonos',           budget:150,  real:128,  color:'#10b981'},
+    {label:'Formación',       budget:80,   real:62,   color:'#06b6d4'},
+    {label:'Reclutamiento',   budget:60,   real:52,   color:'#f59e0b'},
+  ];
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+      <div className="kpi-grid">{d.kpis.map((k,i) => <KPICard key={i} {...k} />)}</div>
+      <TabBar tabs={TABS} active={tab} onChange={setTab} />
+      <div key={tab} className="tab-content" style={{display:"flex",flexDirection:"column",gap:16}}>
+      {tab==='tendencia' && (
+        <ChartCard title="EVOLUCIÓN DE NÓMINA — 12 MESES (M₲)">
+          <div style={{height:300}}><ChartComp type="line" data={trendLine.data} options={trendLine.options} chartKey={ck+'nl'} /></div>
+        </ChartCard>
+      )}
+
+      {tab==='composicion' && (
+        <ChartCard title="COMPOSICIÓN DE COSTOS RRHH" legend={d.breakdown.labels.map((l,i)=>({label:`${l} ${d.breakdown.values[i]}%`,color:['#7c5af6','#d946ef','#10b981','#06b6d4','#f59e0b','#6b7a99'][i]}))}>
+          <div style={{display:'flex',alignItems:'center',gap:32}}>
+            <div style={{width:220,height:220,flexShrink:0}}><ChartComp type="pie" data={breakPie.data} options={breakPie.options} chartKey={ck+'bp'} /></div>
+            <div style={{flex:1,display:'flex',flexDirection:'column',gap:10}}>
+              {d.breakdown.labels.map((l,i) => (
+                <div key={l} style={{display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:['#7c5af6','#d946ef','#10b981','#06b6d4','#f59e0b','#6b7a99'][i],flexShrink:0}} />
+                  <div style={{fontSize:13,color:'var(--text)',flex:1}}>{l}</div>
+                  <div style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>{d.breakdown.values[i]}%</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </ChartCard>
+      )}
+
+      {tab==='empresa' && (
+        <ChartCard title="NÓMINA POR EMPRESA (M₲)">
+          <div style={{height:300}}><ChartComp type="bar" data={companyBar.data} options={companyBar.options} chartKey={ck+'ncb'} /></div>
+        </ChartCard>
+      )}
+
+      {tab==='presupuesto' && (
+        <ChartCard title="PRESUPUESTO VS REAL — POR CATEGORÍA (M₲)">
+          <div style={{display:'flex',flexDirection:'column',gap:14,paddingTop:8}}>
+            {budgetData.map(b => (
+              <div key={b.label}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
+                  <span style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>{b.label}</span>
+                  <span style={{fontSize:12,color:'var(--text2)'}}>Real: <b style={{color:b.color}}>₲{b.real}M</b> / Presupuesto: ₲{b.budget}M</span>
+                </div>
+                <div style={{height:10,background:'var(--border)',borderRadius:99,overflow:'hidden',position:'relative'}}>
+                  <div style={{height:'100%',width:`${b.budget/1200*100}%`,background:'var(--border)',borderRadius:99}} />
+                  <div style={{height:'100%',width:`${b.real/1200*100}%`,background:b.color,borderRadius:99,position:'absolute',top:0,left:0}} />
+                </div>
+                <div style={{fontSize:11,color:b.real<=b.budget?'var(--green)':'var(--red)',marginTop:3,textAlign:'right'}}>
+                  {b.real<=b.budget ? `✓ ${Math.round((1-b.real/b.budget)*100)}% bajo presupuesto` : `⚠ ${Math.round((b.real/b.budget-1)*100)}% sobre presupuesto`}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
+      )}
+      </div>
+    </div>
+  );
+}
+
+// ── RESUMEN EJECUTIVO ────────────────────────────────────────────────────────
+function ModuleResumen({ dark }) {
+  const stats = [
+    {label:'Colaboradores Totales',value:'243',color:'#7c5af6'},
+    {label:'Tasa de Rotación',value:'12.4%',color:'#ef4444'},
+    {label:'% Mujeres Líderes',value:'41%',color:'#d946ef'},
+    {label:'Nómina Mensual',value:'₲ 1.6B',color:'#10b981'},
+  ];
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}}>
+        {stats.map(s => (
+          <div key={s.label} className="chart-card" style={{alignItems:'center',textAlign:'center',padding:32}}>
+            <div className="kpi-label">{s.label}</div>
+            <div style={{fontSize:72,fontWeight:800,lineHeight:1,color:s.color,letterSpacing:'-2px',margin:'12px 0'}}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+        <div className="chart-card" style={{gap:16}}>
+          <div className="chart-title">ALERTAS Y RECOMENDACIONES</div>
+          {[
+            {icon:'⚠️', text:'Brecha salarial de género en Anillo 3: −21%', color:'#f59e0b'},
+            {icon:'📈', text:'Rotación voluntaria aumentó 2.1% vs trimestre anterior', color:'#ef4444'},
+            {icon:'✅', text:'Tasa de aceptación de oferta en 93% — excelente', color:'#10b981'},
+            {icon:'👥', text:'Vacantes críticas en ROGER (5) y BPR (4)', color:'#7c5af6'},
+          ].map((a,i) => (
+            <div key={i} style={{display:'flex',gap:12,padding:'12px 14px',background:'var(--card2)',borderRadius:8,borderLeft:`3px solid ${a.color}`}}>
+              <span style={{fontSize:16}}>{a.icon}</span>
+              <span style={{fontSize:13,color:'var(--text)',lineHeight:1.5}}>{a.text}</span>
+            </div>
+          ))}
+        </div>
+        <div className="chart-card" style={{gap:16}}>
+          <div className="chart-title">INDICADORES CLAVE — SEMÁFORO</div>
+          {[
+            {label:'Headcount vs Budget', pct:97, color:'#10b981'},
+            {label:'Budget RRHH utilizado', pct:78, color:'#10b981'},
+            {label:'Rotación vs objetivo (10%)', pct:124, color:'#ef4444'},
+            {label:'Tiempo a cobertura (obj. 15d)', pct:83, color:'#f59e0b'},
+            {label:'Engagement score', pct:74, color:'#f59e0b'},
+          ].map((item,i) => (
+            <div key={i} style={{display:'flex',flexDirection:'column',gap:5}}>
+              <div style={{display:'flex',justifyContent:'space-between'}}>
+                <span style={{fontSize:12,color:'var(--text)'}}>{item.label}</span>
+                <span style={{fontSize:12,fontWeight:700,color:item.color}}>{item.pct}%</span>
+              </div>
+              <div style={{height:6,background:'var(--border)',borderRadius:99,overflow:'hidden'}}>
+                <div style={{height:'100%',width:`${Math.min(item.pct,100)}%`,background:item.color,borderRadius:99,transition:'width .5s'}} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── APP ──────────────────────────────────────────────────────────────────────
+const MODULES = [
+  { id:'nomina', label:'Nómina', icon:'👤', moduleLabel:'MÓDULO DE NÓMINA', pageTitle:'Análisis de Colaboradores' },
+  { id:'reclutamiento', label:'Reclutamiento', icon:'🔍', moduleLabel:'MÓDULO DE RECLUTAMIENTO', pageTitle:'Análisis de Reclutamiento' },
+  { id:'rotacion', label:'Rotación', icon:'🔄', moduleLabel:'MÓDULO DE ROTACIÓN', pageTitle:'Análisis de Rotación' },
+  { id:'costos', label:'Costos', icon:'💰', moduleLabel:'MÓDULO DE COSTOS', pageTitle:'Análisis de Costos' },
+  { id:'resumen', label:'Resumen Ejecutivo', icon:'📊', moduleLabel:'RESUMEN EJECUTIVO', pageTitle:'Vista Ejecutiva' },
+];
+
+// ── SIDEBAR FILTERS ──────────────────────────────────────────────────────────
+const FILTER_GROUPS = [
+  { id:'empresa', label:'Empresa', options:['AMPLIFY','BPR','BRICK','COATI','FUNDACION','LUPE','NASTA','OMD','ROGER','ROW','TEXO','VILA ROMANA'] },
+  { id:'salida', label:'Tipo Salida', options:['INVOLUNTARIA','VOLUNTARIA'] },
+  { id:'anio', label:'Año', options:['2023','2024','2025'] },
+  { id:'depto', label:'Departamento', options:['ADMINISTRACIÓN','ARTE Y CREATIVIDAD','COMERCIAL','CONTABILIDAD','CUENTAS','DESARROLLO','DIRECTORIO','FINANZAS','GERENCIA GENERAL','INFORMÁTICA','LICITACIONES','MEDIOS DIGITALES'] },
+];
+
+function SidebarFilters() {
+  const [open, setOpen] = useState({empresa:true, salida:false, anio:false, depto:false});
+  const [selected, setSelected] = useState({empresa:[], salida:[], anio:['2025'], depto:[]});
+
+  const toggle = (group, val) => {
+    setSelected(prev => {
+      const cur = prev[group];
+      return {...prev, [group]: cur.includes(val) ? cur.filter(v=>v!==val) : [...cur, val]};
+    });
+  };
+
+  return (
+    <div style={{borderTop:'1px solid var(--border)'}}>
+      {FILTER_GROUPS.map(g => (
+        <div key={g.id} className="filter-section">
+          <div className="filter-section-header" onClick={()=>setOpen(p=>({...p,[g.id]:!p[g.id]}))}>
+            <span>{g.label}</span>
+            <span className={`filter-chevron ${open[g.id]?'open':''}`}>▾</span>
+          </div>
+          {open[g.id] && (
+            <div className="filter-chips">
+              {g.options.map(opt => (
+                <div key={opt} className={`chip ${selected[g.id].includes(opt)?'active':''}`} onClick={()=>toggle(g.id, opt)}>{opt}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "fontSize": 30,
+  "accentColor": "#7c5af6",
+  "chartBorderRadius": 6
+}/*EDITMODE-END*/;
+
+function App() {
+  const saved = JSON.parse(localStorage.getItem('rrhh-state') || '{}');
+  const [dark, setDark] = useState(saved.dark !== undefined ? saved.dark : true);
+  const [activeId, setActiveId] = useState(saved.activeId || 'nomina');
+  const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
+  const [showTweaks, setShowTweaks] = useState(false);
+  const [presenting, setPresenting] = useState(false);
+
+  const togglePresentation = () => {
+    const next = !presenting;
+    setPresenting(next);
+    if (next) document.documentElement.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  };
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape') setPresenting(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem('rrhh-state', JSON.stringify({dark, activeId}));
+  }, [dark, activeId]);
+
+  useEffect(() => {
+    window.addEventListener('message', e => {
+      if (e.data?.type === '__activate_edit_mode') setShowTweaks(true);
+      if (e.data?.type === '__deactivate_edit_mode') setShowTweaks(false);
+    });
+    window.parent.postMessage({type:'__edit_mode_available'}, '*');
+  }, []);
+
+  const setTweak = (key, val) => {
+    const next = {...tweaks, [key]: val};
+    setTweaks(next);
+    window.parent.postMessage({type:'__edit_mode_set_keys', edits: next}, '*');
+    document.documentElement.style.setProperty('--accent', next.accentColor);
+  };
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent', tweaks.accentColor);
+  }, [tweaks.accentColor]);
+
+  const active = MODULES.find(m => m.id === activeId);
+  const themeClass = dark ? 'dark' : 'light';
+
+  return (
+    <div className={`app ${themeClass}${presenting ? ' presentation-mode' : ''}`}>
+      {/* SIDEBAR */}
+      <aside className={`sidebar ${themeClass}${presenting ? ' presentation' : ''}`}>
+        <div className="sidebar-logo">
+          <img src="assets/logo-texo.png" className="logo-img" alt="TEXO" />
+          <div className="logo-tagline">Portal de RRHH</div>
+          <div className="logo-accent" />
+        </div>
+        <nav className="sidebar-nav">
+          <div className="nav-label">Módulos</div>
+          {MODULES.map(m => (
+            <div key={m.id} className={`nav-item ${activeId===m.id?'active':''}`} onClick={()=>setActiveId(m.id)}>
+              <span className="nav-icon">{m.icon}</span>{m.label}
+            </div>
+          ))}
+
+          {/* FILTROS */}
+          <div className="filters-header">Filtros</div>
+          <SidebarFilters />
+
+          <div className="nav-item" style={{color:'var(--red)',marginTop:4}}>
+            <span className="nav-icon">🚪</span>Cerrar sesión
+          </div>
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="version">Danilo Sosa | Texo Sistemas</div>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <div className="main">
+        <div className="topbar">
+          <div className="topbar-left">
+            <div className="module-label">{active.moduleLabel}</div>
+            <div className="page-title" style={{fontSize: Math.max(18, tweaks.fontSize * 0.65) + 'px'}}>{active.pageTitle}</div>
+          </div>
+          <div className="topbar-right">
+            <button className={`btn-present ${presenting ? 'active' : ''}`} onClick={togglePresentation}>
+              {presenting ? '✕ Salir' : '📺 Presentación'}
+            </button>
+            <button className="btn btn-primary" onClick={()=>alert('Actualizando datos...')}>Actualizar datos</button>
+            <button className="theme-toggle" onClick={()=>setDark(!dark)}>{dark?'☀️':'🌙'}</button>
+          </div>
+        </div>
+
+        <div className="content">
+          {activeId==='nomina' && <ModuleNomina dark={dark} fontSize={tweaks.fontSize} />}
+          {activeId==='reclutamiento' && <ModuleReclutamiento dark={dark} fontSize={tweaks.fontSize} />}
+          {activeId==='rotacion' && <ModuleRotacion dark={dark} fontSize={tweaks.fontSize} />}
+          {activeId==='costos' && <ModuleCostos dark={dark} fontSize={tweaks.fontSize} />}
+          {activeId==='resumen' && <ModuleResumen dark={dark} />}
+        </div>
+      </div>
+
+      {/* TWEAKS */}
+      {showTweaks && (
+        <div className={`tweaks-panel ${themeClass}`}>
+          <div className="tweaks-title">⚙️ Tweaks</div>
+          <div className="tweak-row">
+            <label>Tamaño de KPIs</label>
+            <input type="range" min={20} max={56} step={2} value={tweaks.fontSize} onChange={e=>setTweak('fontSize', +e.target.value)} />
+            <div className="tweak-val">{tweaks.fontSize}px</div>
+          </div>
+          <div className="tweak-row">
+            <label>Color Acento</label>
+            <select value={tweaks.accentColor} onChange={e=>setTweak('accentColor', e.target.value)}>
+              <option value="#7c5af6">Violeta</option>
+              <option value="#0ea5e9">Azul</option>
+              <option value="#10b981">Verde</option>
+              <option value="#f59e0b">Ámbar</option>
+              <option value="#ef4444">Rojo</option>
+            </select>
+          </div>
+          <div className="tweak-row">
+            <label>Modo</label>
+            <select value={dark?'dark':'light'} onChange={e=>setDark(e.target.value==='dark')}>
+              <option value="dark">Oscuro</option>
+              <option value="light">Claro</option>
+            </select>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+<div id="root"></div>
+</body>
+</html>

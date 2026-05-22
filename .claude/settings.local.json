@@ -15,7 +15,21 @@
       "Bash(git config *)",
       "Bash(git push *)",
       "PowerShell(Add-Type -AssemblyName DocumentFormat.OpenXml; $doc = [DocumentFormat.OpenXml.Packaging.WordprocessingDocument]::Open\\(\"C:\\\\Users\\\\Usuario\\\\Desktop\\\\rrhh-web\\\\implementar.docx\", $false\\); $body = $doc.MainDocumentPart.Document.Body; $body.InnerText)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(python3 *)",
+      "Bash(git -C C:/Users/Usuario/Desktop/rrhh-web status)",
+      "Bash(git -C C:/Users/Usuario/Desktop/rrhh-web diff)",
+      "Bash(git -C /c/Users/Usuario/Desktop/rrhh-web add frontend/components/LayoutShell.tsx frontend/components/Sidebar.tsx)",
+      "Bash(git -C /c/Users/Usuario/Desktop/rrhh-web commit -m ' *)",
+      "Bash(git -C /c/Users/Usuario/Desktop/rrhh-web push)",
+      "Bash(docker --version)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Usuario\\\\Desktop\\\\rrhh-web\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(xargs -I {} bash -c 'echo \"=== {} ===\" && wc -l {}')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://rrhh-web-uy0g.onrender.com/api/cache/ping --max-time 15)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(C:\\\\Users\\\\Usuario\\\\Desktop\\\\rrhh-web\\\\frontend\\\\node_modules\\\\.bin\\\\tsc.cmd --noEmit -p C:\\\\Users\\\\Usuario\\\\Desktop\\\\rrhh-web\\\\frontend\\\\tsconfig.json)",
+      "Bash(./node_modules/.bin/tsc --noEmit)"
     ]
   }
 }
