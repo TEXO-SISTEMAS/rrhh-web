@@ -603,11 +603,12 @@ export default function RotacionPage() {
                     text: motOrig.map((r) => String(r.cantidad)),
                     textposition: "outside" }]}
                   layout={{
-                    margin: { t: 16, r: 48, b: 36, l: 240 },
+                    margin: { t: 24, r: 60, b: 40, l: 260 },
                     xaxis: { autorange: true },
-                    yaxis: { automargin: true, tickfont: { size: 13 } },
+                    yaxis: { automargin: true, tickfont: { size: 14 } },
+                    bargap: 0.25,
                   }}
-                  height={motOrig.length * 80 + 60}
+                  height={Math.max(320, motOrig.length * 100)}
                 />
               </ChartCard>
             )}
