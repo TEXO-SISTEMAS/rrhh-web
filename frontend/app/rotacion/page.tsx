@@ -206,6 +206,10 @@ function computeFromRows(allRows: Row[]) {
   const topDept = Object.entries(groupBy(todasSalidas.filter((r) => r.DEPARTAMENTO && String(r.DEPARTAMENTO).toUpperCase() !== "NAN"), "DEPARTAMENTO"))
     .map(([dept, r]) => ({ dept, salidas: r.length })).sort((a, b) => b.salidas - a.salidas).slice(0, 10);
 
+  const permArea = Object.entries(groupBy(todasSalidas.filter((r) => r.AREA && String(r.AREA).toUpperCase() !== "NAN" && r.MESES_PERMANENCIA != null && !isNaN(Number(r.MESES_PERMANENCIA))), "AREA"))
+    .map(([area, r]) => ({ area, n: r.length, meses: Math.round(r.reduce((a, x) => a + Number(x.MESES_PERMANENCIA), 0) / r.length * 10) / 10 }))
+    .filter((r) => r.meses > 0).sort((a, b) => a.meses - b.meses).slice(0, 12);
+
   const permHist = todasSalidas.map((r) => Number(r.MESES_PERMANENCIA)).filter((v) => !isNaN(v) && v > 0);
 
   const byAno: Record<string, typeof tasaMensual> = {};
@@ -396,7 +400,7 @@ function computeFromRows(allRows: Row[]) {
       { empresa: string; ingresos: number; egresos: number; pct: number | null }[];
   })();
 
-  return { kpis, tipoSalida, motOrig, tasaMensual, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, topDept, permHist, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento };
+  return { kpis, tipoSalida, motOrig, tasaMensual, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, permArea, topDept, permHist, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento };
 }
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -474,7 +478,7 @@ export default function RotacionPage() {
   const filteredRows            = applyFilters(rawRows, selected);
   const advertencias: string[] = (data.advertencias as string[]) ?? [];
   const computed = computeFromRows(filteredRows);
-  const { kpis, tipoSalida, motOrig, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, topDept, permHist, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento } = computed;
+  const { kpis, tipoSalida, motOrig, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, permArea, topDept, permHist, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento } = computed;
 
   const entrevistas: AnyObj = (data.entrevistas as AnyObj) ?? {};
   const dimData = entrevistas.por_dimension
@@ -658,6 +662,16 @@ export default function RotacionPage() {
                 height={380}
               />
             </div>
+          )}
+          {permHist.length > 0 && (
+            <ChartCard title="Distribución de Permanencia al Momento de la Salida (meses)">
+              <PlotChart
+                light
+                data={[{ type: "histogram", x: permHist, marker: { color: C_BLUE } } as AnyObj]}
+                layout={{ margin: { t: 16, r: 16, b: 50, l: 50 } }}
+                height={280}
+              />
+            </ChartCard>
           )}
         </div>
       )}
@@ -953,13 +967,16 @@ export default function RotacionPage() {
               </ChartCard>
             )}
           </div>
-          {permHist.length > 0 && (
-            <ChartCard title="Distribución de Permanencia al Momento de la Salida (meses)">
+          {permArea.length > 0 && (
+            <ChartCard title="Permanencia Promedio por Área (meses) — Salientes">
               <PlotChart
                 light
-                data={[{ type: "histogram", x: permHist, marker: { color: "#2563EB" } } as AnyObj]}
-                layout={{ margin: { t: 16, r: 16, b: 50, l: 50 } }}
-                height={280}
+                data={[{ type: "bar", orientation: "h",
+                  x: permArea.map((r) => r.meses), y: permArea.map((r) => r.area),
+                  text: permArea.map((r) => `${r.meses} m  (n=${r.n})`), textposition: "outside" as const,
+                  marker: { color: C_RED } }]}
+                layout={{ margin: { t: 16, r: 120, b: 36, l: 130 } }}
+                height={Math.max(280, permArea.length * 28)}
               />
             </ChartCard>
           )}
