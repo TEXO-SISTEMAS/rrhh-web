@@ -5,6 +5,7 @@ del original, calcula días hábiles, normaliza situaciones, cuenta candidatos
 y devuelve el JSON completo para renderizar todos los gráficos del módulo.
 """
 
+import gc
 import io
 from datetime import date
 from typing import List
@@ -369,4 +370,6 @@ async def procesar_reclutamiento(files: List[UploadFile] = File(...)):
         "tendencia_cierre": tendencia_cierre,
         "tabla":            tabla,
     }
+    del df
+    gc.collect()
     return JSONResponse(content=jsonable_encoder(result))

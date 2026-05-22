@@ -1,3 +1,4 @@
+import gc
 import logging
 import traceback
 
@@ -99,6 +100,7 @@ async def startup_check():
 
 @app.get("/")
 def health_check():
+    gc.collect()
     url = os.getenv("SUPABASE_URL", "")
     return {"status": "ok", "app": "RRHH Texo API", "supabase": bool(url)}
 

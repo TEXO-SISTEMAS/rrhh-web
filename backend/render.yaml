@@ -3,7 +3,7 @@ services:
     name: rrhh-texo-api
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --loop asyncio
     envVars:
       - key: ANTHROPIC_API_KEY
         sync: false   # marcada como secret — se carga manualmente en el dashboard de Render

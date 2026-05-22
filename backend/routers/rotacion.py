@@ -5,6 +5,7 @@ detecta mes con diccionario + Claude fallback, normaliza, calcula tasa anual,
 categoriza motivos con IA e incluye análisis de entrevistas si hay cols P1-P8.
 """
 
+import gc
 import io
 import json
 import os
@@ -389,4 +390,7 @@ async def procesar_rotacion(files: List[UploadFile] = File(...)):
         "raw_rows":     raw_rows,
         "tabla":        tabla,
     }
+    # Liberar memoria antes de serializar
+    del df, df_sal, all_dfs
+    gc.collect()
     return JSONResponse(content=jsonable_encoder(result))

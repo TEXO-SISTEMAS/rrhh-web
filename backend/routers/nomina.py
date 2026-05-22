@@ -4,6 +4,7 @@ Recibe un Excel de nómina, normaliza, infiere género con Claude API,
 calcula generaciones/liderazgo/brecha salarial y devuelve JSON.
 """
 
+import gc
 import io
 import json
 import os
@@ -403,4 +404,6 @@ async def procesar_nomina(file: UploadFile = File(...)):
         "brecha_salarial": brecha_salarial,
         "tabla":          tabla,
     }
+    del df
+    gc.collect()
     return JSONResponse(content=jsonable_encoder(result))

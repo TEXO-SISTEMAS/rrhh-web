@@ -5,6 +5,7 @@ calcula sobrecosto como métrica principal, ordena niveles AIC
 y devuelve JSON completo para todos los gráficos del módulo.
 """
 
+import gc
 import io
 from typing import List, Optional
 
@@ -365,4 +366,6 @@ async def procesar_costos(
         "tabla":           tabla,
         "raw_rows":        raw_rows,
     }
+    del df
+    gc.collect()
     return JSONResponse(content=jsonable_encoder(result))
