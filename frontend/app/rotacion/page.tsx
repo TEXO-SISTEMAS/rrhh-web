@@ -820,7 +820,7 @@ export default function RotacionPage() {
                 light
                 data={[{ type: "bar", orientation: "h",
                   x: permEmp.map((r) => r.meses), y: permEmp.map((r) => r.empresa),
-                  text: permEmp.map((r) => `${r.meses} m`), textposition: "outside" as const,
+                  text: permEmp.map((r) => `${r.meses} meses`), textposition: "outside" as const,
                   marker: { color: C_RED } }]}
                 layout={{ margin: { t: 16, r: 40, b: 36, l: 110 } }}
                 height={Math.max(280, permEmp.length * 28)}
@@ -834,7 +834,7 @@ export default function RotacionPage() {
                 light
                 data={[{ type: "bar", orientation: "h",
                   x: permEmpActivos.map((r) => r.meses), y: permEmpActivos.map((r) => r.empresa),
-                  text: permEmpActivos.map((r) => `${r.meses} m  (n=${r.n})`), textposition: "outside" as const,
+                  text: permEmpActivos.map((r) => `${r.meses} meses`), textposition: "outside" as const,
                   marker: { color: C_BLUE } }]}
                 layout={{ margin: { t: 16, r: 100, b: 36, l: 110 } }}
                 height={Math.max(280, permEmpActivos.length * 28)}
@@ -973,7 +973,7 @@ export default function RotacionPage() {
                 light
                 data={[{ type: "bar", orientation: "h",
                   x: permArea.map((r) => r.meses), y: permArea.map((r) => r.area),
-                  text: permArea.map((r) => `${r.meses} m  (n=${r.n})`), textposition: "outside" as const,
+                  text: permArea.map((r) => `${r.meses} meses`), textposition: "outside" as const,
                   marker: { color: C_RED } }]}
                 layout={{ margin: { t: 16, r: 120, b: 36, l: 130 } }}
                 height={Math.max(280, permArea.length * 28)}
