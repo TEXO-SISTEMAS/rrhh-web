@@ -961,7 +961,7 @@ export default function RotacionPage() {
               </ChartCard>
             )}
             {permCargo.length > 0 && (
-              <ChartCard title="Top 10 Cargos con Menor Permanencia">
+              <ChartCard title="Top 10 Cargos con Menor Permanencia (meses)">
                 <PlotChart
                   light
                   data={[{ type: "bar", orientation: "h",
