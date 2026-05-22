@@ -278,6 +278,17 @@ function computeFromRows(allRows: Row[]) {
   };
 
   // ── Rotación Involuntaria por Empresa ────────────────────────────────────
+  // Helper: personas únicas por CEDULA (fallback NOMBRE) dentro de un conjunto de filas con cierta condición
+  const uniquePersons = (rows: Row[], predicate: (r: Row) => boolean): number => {
+    const seen = new Set<string>();
+    for (const r of rows) {
+      if (!predicate(r)) continue;
+      const id = String(r.CEDULA ?? r.NOMBRE ?? "").trim();
+      if (id && id.toUpperCase() !== "NAN") seen.add(id);
+    }
+    return seen.size;
+  };
+
   const rotInv = (() => {
     const empMap = groupBy(allRows.filter((r) => r.EMPRESA), "EMPRESA");
     const rows = Object.entries(empMap).map(([empresa, empRows]) => {
@@ -285,7 +296,7 @@ function computeFromRows(allRows: Row[]) {
       const ultAno  = anos.length ? Math.max(...anos) : null;
       if (!ultAno) return null;
       const rowsAno      = empRows.filter((r) => Number(r.ANO_REPORTE) === ultAno);
-      const involuntaria = rowsAno.filter((r) => String(r.TIPO_SALIDA ?? "").toUpperCase().includes("INV")).length;
+      const involuntaria = uniquePersons(rowsAno, (r) => String(r.TIPO_SALIDA ?? "").toUpperCase().includes("INV"));
       const hcEnero      = rowsAno.filter((r) => Number(r.MES_REPORTE) === 1).length;
       const pct          = hcEnero > 0 ? Math.round(involuntaria / hcEnero * 100) : null;
       const empUp        = empresa.toUpperCase().trim();
@@ -315,7 +326,7 @@ function computeFromRows(allRows: Row[]) {
       const ultAno  = anos.length ? Math.max(...anos) : null;
       if (!ultAno) return null;
       const rowsAno    = empRows.filter((r) => Number(r.ANO_REPORTE) === ultAno);
-      const voluntaria = rowsAno.filter((r) => String(r.TIPO_SALIDA ?? "").toUpperCase().includes("VOL")).length;
+      const voluntaria = uniquePersons(rowsAno, (r) => { const t = String(r.TIPO_SALIDA ?? "").toUpperCase(); return t.includes("VOL") && !t.includes("INV"); });
       const hcEnero    = rowsAno.filter((r) => Number(r.MES_REPORTE) === 1).length;
       const pct        = hcEnero > 0 ? Math.round(voluntaria / hcEnero * 100) : null;
       const empUp      = empresa.toUpperCase().trim();
