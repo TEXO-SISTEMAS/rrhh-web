@@ -1001,7 +1001,7 @@ export default function RotacionPage() {
                   z: heatmap.z,
                   text: heatmap.z.map((row) => row.map((v) => v > 0 ? String(v) : "")) as unknown as string[],
                   texttemplate: "%{text}",
-                  textfont: { color: "#111827", size: 12 },
+                  textfont: { color: heatmap.z.map((row) => row.map((v) => v >= 5 ? "#ffffff" : "#111827")) as unknown as string, size: 12 },
                   colorscale: [[0, "#f0f4ff"], [0.01, "#bfdbfe"], [0.4, "#3b82f6"], [1, "#1e3a8a"]],
                   zmin: 0,
                   hoverongaps: false,
