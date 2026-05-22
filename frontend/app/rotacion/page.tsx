@@ -161,6 +161,38 @@ function computeFromRows(allRows: Row[]) {
     .map(([emp, r]) => ({ empresa: emp, meses: Math.round(r.reduce((a, x) => a + Number(x.MESES_PERMANENCIA), 0) / r.length * 10) / 10 }))
     .filter((r) => r.meses > 0).sort((a, b) => a.meses - b.meses);
 
+  // Permanencia de activos: snapshot del último mes disponible, calcula meses desde FECHA_INGRESO
+  const permEmpActivos = (() => {
+    const anos = allRows.map((r) => Number(r.ANO_REPORTE)).filter((v) => !isNaN(v));
+    const ultAno = anos.length ? Math.max(...anos) : null;
+    if (!ultAno) return [];
+    const rowsAno = allRows.filter((r) => Number(r.ANO_REPORTE) === ultAno);
+    const meses = rowsAno.map((r) => Number(r.MES_REPORTE)).filter((v) => !isNaN(v));
+    const ultMes = meses.length ? Math.max(...meses) : null;
+    if (!ultMes) return [];
+    const snap = rowsAno.filter((r) =>
+      Number(r.MES_REPORTE) === ultMes &&
+      String(r.SITUACION ?? "").trim().toUpperCase() === "A" &&
+      (r.FECHA_INGRESO != null && String(r.FECHA_INGRESO).trim() !== "" && String(r.FECHA_INGRESO).trim() !== "null")
+    );
+    const refDate = new Date(ultAno, ultMes - 1, 1);
+    const byEmp: Record<string, number[]> = {};
+    for (const r of snap) {
+      const fi = new Date(String(r.FECHA_INGRESO));
+      if (isNaN(fi.getTime())) continue;
+      const mesesPerm = Math.round(((refDate.getTime() - fi.getTime()) / (1000 * 60 * 60 * 24 * 30.44)) * 10) / 10;
+      if (mesesPerm <= 0) continue;
+      const emp = String(r.EMPRESA ?? "").trim();
+      if (!emp) continue;
+      byEmp[emp] = byEmp[emp] ?? [];
+      byEmp[emp].push(mesesPerm);
+    }
+    return Object.entries(byEmp)
+      .map(([empresa, vals]) => ({ empresa, meses: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10 }))
+      .filter((r) => r.meses > 0)
+      .sort((a, b) => a.meses - b.meses);
+  })();
+
   const topCargos = Object.entries(groupBy(todasSalidas.filter((r) => r.CARGO && String(r.CARGO).toUpperCase() !== "NAN"), "CARGO"))
     .map(([cargo, r]) => ({ cargo, salidas: r.length })).sort((a, b) => b.salidas - a.salidas).slice(0, 10);
 
@@ -364,7 +396,7 @@ function computeFromRows(allRows: Row[]) {
       { empresa: string; ingresos: number; egresos: number; pct: number | null }[];
   })();
 
-  return { kpis, tipoSalida, motOrig, tasaMensual, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, topCargos, permCargo, topAreas, topDept, permHist, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento };
+  return { kpis, tipoSalida, motOrig, tasaMensual, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, topDept, permHist, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento };
 }
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -442,7 +474,7 @@ export default function RotacionPage() {
   const filteredRows            = applyFilters(rawRows, selected);
   const advertencias: string[] = (data.advertencias as string[]) ?? [];
   const computed = computeFromRows(filteredRows);
-  const { kpis, tipoSalida, motOrig, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, topCargos, permCargo, topAreas, topDept, permHist, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento } = computed;
+  const { kpis, tipoSalida, motOrig, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, topDept, permHist, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento } = computed;
 
   const entrevistas: AnyObj = (data.entrevistas as AnyObj) ?? {};
   const dimData = entrevistas.por_dimension
@@ -769,15 +801,29 @@ export default function RotacionPage() {
           )}
 
           {permEmp.length > 0 && (
-            <ChartCard title="Permanencia Promedio por Empresa (meses)">
+            <ChartCard title="Permanencia Promedio — Salientes (meses)">
               <PlotChart
                 light
                 data={[{ type: "bar", orientation: "h",
                   x: permEmp.map((r) => r.meses), y: permEmp.map((r) => r.empresa),
                   text: permEmp.map((r) => `${r.meses} m`), textposition: "outside" as const,
-                  marker: { color: C_BLUE } }]}
+                  marker: { color: C_RED } }]}
                 layout={{ margin: { t: 16, r: 40, b: 36, l: 110 } }}
                 height={Math.max(280, permEmp.length * 28)}
+              />
+            </ChartCard>
+          )}
+
+          {permEmpActivos.length > 0 && (
+            <ChartCard title="Permanencia Promedio — Activos (meses)">
+              <PlotChart
+                light
+                data={[{ type: "bar", orientation: "h",
+                  x: permEmpActivos.map((r) => r.meses), y: permEmpActivos.map((r) => r.empresa),
+                  text: permEmpActivos.map((r) => `${r.meses} m`), textposition: "outside" as const,
+                  marker: { color: C_BLUE } }]}
+                layout={{ margin: { t: 16, r: 40, b: 36, l: 110 } }}
+                height={Math.max(280, permEmpActivos.length * 28)}
               />
             </ChartCard>
           )}
