@@ -774,8 +774,9 @@ export default function RotacionPage() {
                 light
                 data={[{ type: "bar", orientation: "h",
                   x: permEmp.map((r) => r.meses), y: permEmp.map((r) => r.empresa),
-                  marker: { color: permEmp.map((r) => r.meses), colorscale: "Blues", showscale: false } }]}
-                layout={{ margin: { t: 16, r: 16, b: 36, l: 110 } }}
+                  text: permEmp.map((r) => `${r.meses} m`), textposition: "outside" as const,
+                  marker: { color: C_BLUE } }]}
+                layout={{ margin: { t: 16, r: 40, b: 36, l: 110 } }}
                 height={Math.max(280, permEmp.length * 28)}
               />
             </ChartCard>
