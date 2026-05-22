@@ -349,14 +349,6 @@ export default function ReclutamientoPage() {
             </ChartCard>
           )}
           {diasAno.length > 0 && (
-            <ChartCard title="Días Promedio de Cierre por Año">
-              <PlotChart
-                light
-                data={[{ type: "bar", x: diasAno.map((r) => r.ANO), y: diasAno.map((r) => r.dias_promedio), marker: { color: barColors(diasAno.length) } }]}
-                layout={{ yaxis: { ticksuffix: "d" } }}
-                height={300}
-              />
-            </ChartCard>
           )}
         </div>
       )}
