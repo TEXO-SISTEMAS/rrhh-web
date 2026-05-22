@@ -188,7 +188,7 @@ function computeFromRows(allRows: Row[]) {
       byEmp[emp].push(mesesPerm);
     }
     return Object.entries(byEmp)
-      .map(([empresa, vals]) => ({ empresa, meses: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10 }))
+      .map(([empresa, vals]) => ({ empresa, n: vals.length, meses: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10 }))
       .filter((r) => r.meses > 0)
       .sort((a, b) => a.meses - b.meses);
   })();
@@ -820,9 +820,9 @@ export default function RotacionPage() {
                 light
                 data={[{ type: "bar", orientation: "h",
                   x: permEmpActivos.map((r) => r.meses), y: permEmpActivos.map((r) => r.empresa),
-                  text: permEmpActivos.map((r) => `${r.meses} m`), textposition: "outside" as const,
+                  text: permEmpActivos.map((r) => `${r.meses} m  (n=${r.n})`), textposition: "outside" as const,
                   marker: { color: C_BLUE } }]}
-                layout={{ margin: { t: 16, r: 40, b: 36, l: 110 } }}
+                layout={{ margin: { t: 16, r: 100, b: 36, l: 110 } }}
                 height={Math.max(280, permEmpActivos.length * 28)}
               />
             </ChartCard>
