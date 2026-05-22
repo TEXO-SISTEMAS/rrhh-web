@@ -608,10 +608,10 @@ export default function RotacionPage() {
                     text: motOrig.map((r) => String(r.cantidad)),
                     textposition: "outside" }]}
                   layout={{
-                    margin: { t: 24, r: 80, b: 40, l: 260 },
+                    margin: { t: 10, r: 80, b: 30, l: 260 },
                     xaxis: { range: [0, Math.max(...motOrig.map((r) => r.cantidad)) * 1.25] },
                     yaxis: { automargin: true, tickfont: { size: 14 } },
-                    bargap: 0.3,
+                    bargap: 0.08,
                   }}
                   height={Math.max(320, motOrig.length * 110)}
                 />
