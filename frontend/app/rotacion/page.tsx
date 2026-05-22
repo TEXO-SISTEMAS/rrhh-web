@@ -1058,6 +1058,7 @@ function RespuestasTab({
   setShowUpload: (v: boolean) => void;
   onResult: (r: AnyObj) => void;
 }) {
+  const [subTab, setSubTab] = useState<"analisis" | "detalle">("analisis");
   if (!respData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[48vh] gap-6">
@@ -1153,6 +1154,26 @@ function RespuestasTab({
         <KpiCard title="Volvería a trabajar"   value={kpis.pct_volveria != null ? `${kpis.pct_volveria}%` : "—"} />
         <KpiCard title="Recomendaría Texo"     value={kpis.pct_recomienda != null ? `${kpis.pct_recomienda}%` : "—"} />
       </div>
+
+      {/* Sub-tabs */}
+      <div className="flex gap-1 rounded-xl p-1" style={{ background: "var(--card)", border: "1px solid var(--border)", width: "fit-content" }}>
+        {(["analisis", "detalle"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setSubTab(t)}
+            className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
+            style={{
+              background: subTab === t ? "var(--accent)" : "transparent",
+              color: subTab === t ? "#fff" : "var(--text2)",
+            }}
+          >
+            {t === "analisis" ? "Análisis" : "Detalle"}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Sub-tab: Análisis ── */}
+      {subTab === "analisis" && (<>
 
       {/* Promedio por dimensión */}
       {dimensiones.length > 0 && (
@@ -1382,8 +1403,10 @@ function RespuestasTab({
         </div>
       )}
 
-      {/* Tabla individual */}
-      {tabla.length > 0 && (
+      </>)}
+
+      {/* ── Sub-tab: Detalle ── */}
+      {subTab === "detalle" && tabla.length > 0 && (
         <div className="chart-card">
           <h3 className="chart-title mb-4">Respuestas individuales</h3>
           <div className="overflow-x-auto">
