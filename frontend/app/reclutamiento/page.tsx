@@ -348,8 +348,6 @@ export default function ReclutamientoPage() {
               <PlotChart light data={lineTraces} height={300} />
             </ChartCard>
           )}
-          {diasAno.length > 0 && (
-          )}
         </div>
       )}
 
