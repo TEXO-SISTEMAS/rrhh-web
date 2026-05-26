@@ -1064,13 +1064,10 @@ export default function RotacionPage() {
           )}
           {/* ── NIVEL AIC ── */}
           {salidasPorNivel.length > 0 && (
-            <div className="chart-card">
-              <h3 className="chart-title mb-5">Rotación por Nivel AIC</h3>
+            <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
                 {/* Donut: distribución de salidas por nivel */}
-                <div>
-                  <p className="text-xs font-semibold mb-2" style={{ color: "var(--text2)" }}>Distribución de salidas</p>
+                <ChartCard title="Salidas por Nivel AIC">
                   <PlotChart
                     light
                     data={[{
@@ -1084,14 +1081,13 @@ export default function RotacionPage() {
                       marker: { colors: salidasPorNivel.map((r) => NIVEL_COLOR[r.nivel] ?? C_GRAY) },
                     }]}
                     layout={{ margin: { t: 16, r: 16, b: 16, l: 16 }, showlegend: false }}
-                    height={240}
+                    height={260}
                   />
-                </div>
+                </ChartCard>
 
                 {/* Barras: tasa de rotación por nivel */}
                 {tasaPorNivel.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold mb-2" style={{ color: "var(--text2)" }}>Tasa de rotación por nivel (%)</p>
+                  <ChartCard title="Tasa de Rotación por Nivel (%)">
                     <PlotChart
                       light
                       data={[{
@@ -1107,15 +1103,14 @@ export default function RotacionPage() {
                         margin: { t: 30, r: 16, b: 40, l: 50 },
                         bargap: 0.4,
                       }}
-                      height={240}
+                      height={260}
                     />
-                  </div>
+                  </ChartCard>
                 )}
 
                 {/* Barras: permanencia promedio por nivel */}
                 {permPorNivel.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold mb-2" style={{ color: "var(--text2)" }}>Permanencia promedio — salientes (meses)</p>
+                  <ChartCard title="Permanencia Promedio por Nivel (meses)">
                     <PlotChart
                       light
                       data={[{
@@ -1131,16 +1126,15 @@ export default function RotacionPage() {
                         margin: { t: 30, r: 16, b: 40, l: 50 },
                         bargap: 0.4,
                       }}
-                      height={240}
+                      height={260}
                     />
-                  </div>
+                  </ChartCard>
                 )}
               </div>
 
               {/* Grouped bar: salidas por nivel y empresa */}
               {nivelesEmp.emps.length > 0 && nivelesEmp.niveles.length > 0 && (
-                <>
-                  <h4 className="text-xs font-semibold mt-6 mb-2" style={{ color: "var(--text2)" }}>SALIDAS POR NIVEL Y EMPRESA</h4>
+                <ChartCard title="Salidas por Nivel AIC y Empresa">
                   <PlotChart
                     light
                     data={nivelesEmp.niveles.map((nivel) => ({
@@ -1163,9 +1157,9 @@ export default function RotacionPage() {
                     }}
                     height={320}
                   />
-                </>
+                </ChartCard>
               )}
-            </div>
+            </>
           )}
 
           {topCargos.length === 0 && salidasPorNivel.length === 0 && (
