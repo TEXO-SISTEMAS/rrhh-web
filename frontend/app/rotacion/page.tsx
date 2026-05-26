@@ -414,7 +414,83 @@ function computeFromRows(allRows: Row[]) {
       { empresa: string; ingresos: number; egresos: number; pct: number | null }[];
   })();
 
-  return { kpis, tipoSalida, motOrig, tasaMensual, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, permArea, topDept, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento };
+  // ── NIVEL AIC ────────────────────────────────────────────────────────────
+  const NIVEL_ORDER = ["JUNIOR", "INTERMEDIO", "SENIOR"];
+  const NIVEL_COLOR: Record<string, string> = {
+    JUNIOR:      C_ORANGE,
+    INTERMEDIO:  C_BLUE,
+    SENIOR:      C_GREEN,
+  };
+  const cleanNivel = (r: Row) => {
+    const v = String(r.NIVEL_AIC ?? "").trim().toUpperCase();
+    return v && v !== "NAN" && v !== "NULL" ? v : null;
+  };
+
+  const salidasPorNivel = (() => {
+    const counts: Record<string, number> = {};
+    for (const r of todasSalidas) {
+      const n = cleanNivel(r); if (!n) continue;
+      counts[n] = (counts[n] ?? 0) + 1;
+    }
+    return Object.entries(counts)
+      .map(([nivel, salidas]) => ({ nivel, salidas }))
+      .sort((a, b) => NIVEL_ORDER.indexOf(a.nivel) - NIVEL_ORDER.indexOf(b.nivel));
+  })();
+
+  const tasaPorNivel = (() => {
+    const acc: Record<string, { sal: number; hcEnero: number }> = {};
+    for (const r of allRows) {
+      const n = cleanNivel(r); if (!n) continue;
+      acc[n] = acc[n] ?? { sal: 0, hcEnero: 0 };
+      if (isAnySalida(r)) acc[n].sal++;
+      if (Number(r.MES_REPORTE) === 1) acc[n].hcEnero++;
+    }
+    return Object.entries(acc)
+      .map(([nivel, d]) => ({
+        nivel,
+        salidas: d.sal,
+        hcEnero: d.hcEnero,
+        tasa: d.hcEnero > 0 ? Math.round(d.sal / d.hcEnero * 1000) / 10 : null,
+      }))
+      .filter((r) => r.hcEnero > 0)
+      .sort((a, b) => NIVEL_ORDER.indexOf(a.nivel) - NIVEL_ORDER.indexOf(b.nivel));
+  })();
+
+  const permPorNivel = (() => {
+    const acc: Record<string, number[]> = {};
+    for (const r of todasSalidas) {
+      const n = cleanNivel(r); if (!n) continue;
+      const m = Number(r.MESES_PERMANENCIA);
+      if (isNaN(m) || m <= 0) continue;
+      acc[n] = acc[n] ?? [];
+      acc[n].push(m);
+    }
+    return Object.entries(acc)
+      .map(([nivel, vals]) => ({
+        nivel,
+        n: vals.length,
+        meses: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10,
+      }))
+      .filter((r) => r.meses > 0)
+      .sort((a, b) => NIVEL_ORDER.indexOf(a.nivel) - NIVEL_ORDER.indexOf(b.nivel));
+  })();
+
+  // Salidas por nivel AIC y empresa (grouped bar)
+  const nivelesEmp = (() => {
+    const acc: Record<string, Record<string, number>> = {};
+    for (const r of todasSalidas) {
+      const n = cleanNivel(r); if (!n) continue;
+      const emp = String(r.EMPRESA ?? "").trim(); if (!emp || emp.toUpperCase() === "NAN") continue;
+      acc[emp] = acc[emp] ?? {};
+      acc[emp][n] = (acc[emp][n] ?? 0) + 1;
+    }
+    const emps = Object.keys(acc).sort();
+    const niveles = Array.from(new Set(todasSalidas.map((r) => cleanNivel(r)).filter(Boolean) as string[]))
+      .sort((a, b) => NIVEL_ORDER.indexOf(a) - NIVEL_ORDER.indexOf(b));
+    return { emps, niveles, acc };
+  })();
+
+  return { kpis, tipoSalida, motOrig, tasaMensual, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, permArea, topDept, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento, salidasPorNivel, tasaPorNivel, permPorNivel, nivelesEmp, NIVEL_COLOR };
 }
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -492,7 +568,7 @@ export default function RotacionPage() {
   const filteredRows            = applyFilters(rawRows, selected);
   const advertencias: string[] = (data.advertencias as string[]) ?? [];
   const computed = computeFromRows(filteredRows);
-  const { kpis, tipoSalida, motOrig, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, permArea, topDept, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento } = computed;
+  const { kpis, tipoSalida, motOrig, byAno, salEmp, tasaEmp, tipoEmp, motivoEmp, permEmp, permEmpActivos, topCargos, permCargo, topAreas, permArea, topDept, porAno, tipoAno, heatmap, retencion, retKpis, rotInv, rotVol, incDecHC, rotTalento, salidasPorNivel, tasaPorNivel, permPorNivel, nivelesEmp, NIVEL_COLOR } = computed;
 
   const entrevistas: AnyObj = (data.entrevistas as AnyObj) ?? {};
   const dimData = entrevistas.por_dimension
@@ -986,7 +1062,113 @@ export default function RotacionPage() {
               />
             </ChartCard>
           )}
-          {topCargos.length === 0 && (
+          {/* ── NIVEL AIC ── */}
+          {salidasPorNivel.length > 0 && (
+            <div className="chart-card">
+              <h3 className="chart-title mb-5">Rotación por Nivel AIC</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                {/* Donut: distribución de salidas por nivel */}
+                <div>
+                  <p className="text-xs font-semibold mb-2" style={{ color: "var(--text2)" }}>Distribución de salidas</p>
+                  <PlotChart
+                    light
+                    data={[{
+                      type: "pie",
+                      labels: salidasPorNivel.map((r) => r.nivel),
+                      values: salidasPorNivel.map((r) => r.salidas),
+                      hole: 0.45,
+                      textinfo: "label+percent",
+                      textposition: "outside",
+                      textfont: { color: "#1e293b" },
+                      marker: { colors: salidasPorNivel.map((r) => NIVEL_COLOR[r.nivel] ?? C_GRAY) },
+                    }]}
+                    layout={{ margin: { t: 16, r: 16, b: 16, l: 16 }, showlegend: false }}
+                    height={240}
+                  />
+                </div>
+
+                {/* Barras: tasa de rotación por nivel */}
+                {tasaPorNivel.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold mb-2" style={{ color: "var(--text2)" }}>Tasa de rotación por nivel (%)</p>
+                    <PlotChart
+                      light
+                      data={[{
+                        type: "bar",
+                        x: tasaPorNivel.map((r) => r.nivel),
+                        y: tasaPorNivel.map((r) => r.tasa ?? 0),
+                        text: tasaPorNivel.map((r) => r.tasa != null ? `${r.tasa}%` : "—"),
+                        textposition: "outside" as const,
+                        marker: { color: tasaPorNivel.map((r) => NIVEL_COLOR[r.nivel] ?? C_GRAY) },
+                      }]}
+                      layout={{
+                        yaxis: { ticksuffix: "%", rangemode: "tozero" },
+                        margin: { t: 30, r: 16, b: 40, l: 50 },
+                        bargap: 0.4,
+                      }}
+                      height={240}
+                    />
+                  </div>
+                )}
+
+                {/* Barras: permanencia promedio por nivel */}
+                {permPorNivel.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold mb-2" style={{ color: "var(--text2)" }}>Permanencia promedio — salientes (meses)</p>
+                    <PlotChart
+                      light
+                      data={[{
+                        type: "bar",
+                        x: permPorNivel.map((r) => r.nivel),
+                        y: permPorNivel.map((r) => r.meses),
+                        text: permPorNivel.map((r) => `${r.meses} m`),
+                        textposition: "outside" as const,
+                        marker: { color: permPorNivel.map((r) => NIVEL_COLOR[r.nivel] ?? C_GRAY) },
+                      }]}
+                      layout={{
+                        yaxis: { rangemode: "tozero" },
+                        margin: { t: 30, r: 16, b: 40, l: 50 },
+                        bargap: 0.4,
+                      }}
+                      height={240}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Grouped bar: salidas por nivel y empresa */}
+              {nivelesEmp.emps.length > 0 && nivelesEmp.niveles.length > 0 && (
+                <>
+                  <h4 className="text-xs font-semibold mt-6 mb-2" style={{ color: "var(--text2)" }}>SALIDAS POR NIVEL Y EMPRESA</h4>
+                  <PlotChart
+                    light
+                    data={nivelesEmp.niveles.map((nivel) => ({
+                      type: "bar" as const,
+                      name: nivel,
+                      x: nivelesEmp.emps,
+                      y: nivelesEmp.emps.map((emp) => nivelesEmp.acc[emp]?.[nivel] ?? 0),
+                      marker: { color: NIVEL_COLOR[nivel] ?? C_GRAY },
+                      text: nivelesEmp.emps.map((emp) => {
+                        const v = nivelesEmp.acc[emp]?.[nivel] ?? 0;
+                        return v > 0 ? String(v) : "";
+                      }),
+                      textposition: "outside" as const,
+                    }))}
+                    layout={{
+                      barmode: "group",
+                      margin: { t: 30, r: 16, b: 80, l: 50 },
+                      legend: { orientation: "h", y: -0.22 },
+                      yaxis: { rangemode: "tozero", dtick: 1 },
+                    }}
+                    height={320}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          {topCargos.length === 0 && salidasPorNivel.length === 0 && (
             <p className="text-sm" style={{ color: "var(--text2)" }}>No hay datos de cargo o área disponibles en este archivo.</p>
           )}
         </div>
