@@ -1132,16 +1132,17 @@ export default function RotacionPage() {
                 )}
               </div>
 
-              {/* Grouped bar: salidas por nivel y empresa */}
+              {/* Grouped horizontal bar: salidas por nivel y empresa */}
               {nivelesEmp.emps.length > 0 && nivelesEmp.niveles.length > 0 && (
                 <ChartCard title="Salidas por Nivel AIC y Empresa">
                   <PlotChart
                     light
                     data={nivelesEmp.niveles.map((nivel) => ({
                       type: "bar" as const,
+                      orientation: "h" as const,
                       name: nivel,
-                      x: nivelesEmp.emps,
-                      y: nivelesEmp.emps.map((emp) => nivelesEmp.acc[emp]?.[nivel] ?? 0),
+                      y: nivelesEmp.emps,
+                      x: nivelesEmp.emps.map((emp) => nivelesEmp.acc[emp]?.[nivel] ?? 0),
                       marker: { color: NIVEL_COLOR[nivel] ?? C_GRAY },
                       text: nivelesEmp.emps.map((emp) => {
                         const v = nivelesEmp.acc[emp]?.[nivel] ?? 0;
@@ -1151,11 +1152,13 @@ export default function RotacionPage() {
                     }))}
                     layout={{
                       barmode: "group",
-                      margin: { t: 30, r: 16, b: 80, l: 50 },
-                      legend: { orientation: "h", y: -0.22 },
-                      yaxis: { rangemode: "tozero", dtick: 1 },
+                      margin: { t: 16, r: 50, b: 40, l: 100 },
+                      legend: { orientation: "h", y: -0.12 },
+                      xaxis: { rangemode: "tozero", dtick: 1 },
+                      bargap: 0.2,
+                      bargroupgap: 0.05,
                     }}
-                    height={320}
+                    height={Math.max(320, nivelesEmp.emps.length * 55)}
                   />
                 </ChartCard>
               )}
