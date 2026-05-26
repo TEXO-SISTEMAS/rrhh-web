@@ -1155,10 +1155,10 @@ export default function RotacionPage() {
                       margin: { t: 16, r: 50, b: 40, l: 100 },
                       legend: { orientation: "h", y: -0.12 },
                       xaxis: { rangemode: "tozero", dtick: 1 },
-                      bargap: 0.15,
-                      bargroupgap: 0.03,
+                      bargap: 0.1,
+                      bargroupgap: 0.02,
                     }}
-                    height={Math.max(320, nivelesEmp.emps.length * 72)}
+                    height={Math.max(320, nivelesEmp.emps.length * 88)}
                   />
                 </ChartCard>
               )}
