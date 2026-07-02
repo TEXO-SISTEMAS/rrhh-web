@@ -513,11 +513,17 @@ export default function RotacionPage() {
   const [respData, setRespData]     = useState<AnyObj | null>(null);
   const [showRespUpload, setShowRespUpload] = useState(false);
 
+  function defaultLatestYear(rows: Row[]): Record<string, string[]> {
+    const years = Array.from(new Set(rows.map((r) => String(r.ANO_REPORTE ?? "")).filter(Boolean))).sort();
+    const latest = years[years.length - 1];
+    return latest ? { ANO_REPORTE: [latest] } : {};
+  }
+
   useEffect(() => {
     if (rotacionData && !data) {
       setData(rotacionData);
       const rows = (rotacionData.raw_rows as Row[]) ?? [];
-      register(FILTER_CONFIGS, rows, {});
+      register(FILTER_CONFIGS, rows, defaultLatestYear(rows));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rotacionData]);
@@ -532,7 +538,7 @@ export default function RotacionPage() {
     setRotacionData(result);
     setShowUpload(false);
     const rows = (result.raw_rows as Row[]) ?? [];
-    register(FILTER_CONFIGS, rows, {});
+    register(FILTER_CONFIGS, rows, defaultLatestYear(rows));
   }
 
   function handleRespResult(result: AnyObj) {
@@ -615,8 +621,13 @@ export default function RotacionPage() {
     marker: { color: LIGHT_COLOR_SEQ[i % LIGHT_COLOR_SEQ.length] },
   }));
 
-  const tablaRot: AnyObj[]     = (data.tabla as AnyObj[]) ?? [];
   const salidasFiltradas        = filteredRows.filter(isAnySalida);
+  const TABLA_COLS = ["EMPRESA","NOMBRE","CEDULA","CARGO","AREA","DEPARTAMENTO","NIVEL_AIC",
+    "TIPO_SALIDA","MOTIVO_SALIDA","MOTIVO_CATEGORIA","ANO_REPORTE","MES_REPORTE",
+    "MESES_PERMANENCIA","FECHA_INGRESO","ANO_INGRESO"];
+  const tablaRot = salidasFiltradas.map((r) =>
+    Object.fromEntries(TABLA_COLS.filter((c) => c in r).map((c) => [c, r[c]]))
+  );
 
   // ── Datos para pestaña Comparación (siempre usa rawRows sin filtro de año) ──
   const anosDisponibles = Array.from(new Set(rawRows.map((r) => String(r.ANO_REPORTE ?? "")).filter(Boolean))).sort();
