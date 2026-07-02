@@ -8,11 +8,12 @@ import TabBar from "@/components/TabBar";
 import DataTable from "@/components/DataTable";
 import { useDashboard } from "@/context/DashboardContext";
 import { useFilter } from "@/context/FilterContext";
-import { Row, groupBy, applyFilters, FilterConfig, defaultYear2025 } from "@/lib/filterUtils";
+import { Row, groupBy, applyFilters, FilterConfig } from "@/lib/filterUtils";
 
 type AnyObj = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 const FILTER_CONFIGS: FilterConfig[] = [
+  { label: "Año",         field: "ANO_REPORTE" },
   { label: "Empresa",     field: "EMPRESA" },
   { label: "Tipo Salida", field: "TIPO_SALIDA" },
   { label: "Departamento", field: "DEPARTAMENTO" },
@@ -28,6 +29,7 @@ const TABS = [
   { id: "empresa",      label: "Por Empresa",          icon: "🏢" },
   { id: "cargo",        label: "Por Cargo / Área",     icon: "📋" },
   { id: "tendencia",    label: "Tendencia",            icon: "📈" },
+  { id: "comparacion",  label: "Comparación",          icon: "⚖️" },
   { id: "detalle",      label: "Detalle",              icon: "📄" },
   { id: "respuestas",   label: "Respuestas",           icon: "💬" },
 ];
@@ -515,7 +517,7 @@ export default function RotacionPage() {
     if (rotacionData && !data) {
       setData(rotacionData);
       const rows = (rotacionData.raw_rows as Row[]) ?? [];
-      register(FILTER_CONFIGS, rows.filter((r) => String(r.ANO_REPORTE ?? "") === "2025"), {});
+      register(FILTER_CONFIGS, rows, {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rotacionData]);
@@ -530,7 +532,7 @@ export default function RotacionPage() {
     setRotacionData(result);
     setShowUpload(false);
     const rows = (result.raw_rows as Row[]) ?? [];
-    register(FILTER_CONFIGS, rows, defaultYear2025(rows, "ANO_REPORTE"));
+    register(FILTER_CONFIGS, rows, {});
   }
 
   function handleRespResult(result: AnyObj) {
@@ -564,7 +566,7 @@ export default function RotacionPage() {
     );
   }
 
-  const rawRows: Row[]         = ((data.raw_rows as Row[]) ?? []).filter((r) => String(r.ANO_REPORTE ?? "") === "2025");
+  const rawRows: Row[]         = (data.raw_rows as Row[]) ?? [];
   const filteredRows            = applyFilters(rawRows, selected);
   const advertencias: string[] = (data.advertencias as string[]) ?? [];
   const computed = computeFromRows(filteredRows);
@@ -615,6 +617,33 @@ export default function RotacionPage() {
 
   const tablaRot: AnyObj[]     = (data.tabla as AnyObj[]) ?? [];
   const salidasFiltradas        = filteredRows.filter(isAnySalida);
+
+  // ── Datos para pestaña Comparación (siempre usa rawRows sin filtro de año) ──
+  const anosDisponibles = Array.from(new Set(rawRows.map((r) => String(r.ANO_REPORTE ?? "")).filter(Boolean))).sort();
+  const compData = Object.fromEntries(
+    anosDisponibles.map((ano) => [
+      ano,
+      computeFromRows(rawRows.filter((r) => String(r.ANO_REPORTE ?? "") === ano)),
+    ])
+  );
+  const YEAR_COLORS: Record<string, string> = {
+    [anosDisponibles[0]]: "#0d9488",
+    [anosDisponibles[1]]: "#6366f1",
+    [anosDisponibles[2]]: "#f59e0b",
+  };
+  const empresasComp = Array.from(new Set(rawRows.map((r) => String(r.EMPRESA ?? "")).filter((e) => e && e !== "NAN"))).sort();
+  const salEmpCompTraces = anosDisponibles.map((ano) => ({
+    type: "bar" as const, name: ano,
+    x: empresasComp,
+    y: empresasComp.map((emp) => compData[ano]?.salEmp.find((r: AnyObj) => r.empresa === emp)?.salidas ?? 0),
+    marker: { color: YEAR_COLORS[ano] ?? C_GRAY },
+  }));
+  const tasaEmpCompTraces = anosDisponibles.map((ano) => ({
+    type: "bar" as const, name: ano,
+    x: empresasComp,
+    y: empresasComp.map((emp) => compData[ano]?.tasaEmp.find((r: AnyObj) => r.empresa === emp)?.tasa_anual ?? 0),
+    marker: { color: YEAR_COLORS[ano] ?? C_GRAY },
+  }));
 
   return (
     <div>
@@ -1205,6 +1234,114 @@ export default function RotacionPage() {
         </div>
       )}
 
+
+      {/* ── Tab: Comparación ── */}
+      {activeTab === "comparacion" && (
+        <div className="space-y-4">
+          {anosDisponibles.length < 2 ? (
+            <div className="rounded-xl px-6 py-10 text-center" style={{ border: "1px solid var(--border)", background: "var(--card)" }}>
+              <p className="text-sm" style={{ color: "var(--text2)" }}>
+                Subí datos de más de un año para ver la comparación. Actualmente solo hay datos de <strong>{anosDisponibles[0] ?? "—"}</strong>.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* KPIs por año */}
+              <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${anosDisponibles.length}, 1fr)` }}>
+                {anosDisponibles.map((ano) => (
+                  <div key={ano} className="rounded-xl p-4 space-y-3" style={{ border: `2px solid ${YEAR_COLORS[ano]}`, background: "var(--card)" }}>
+                    <h3 className="text-sm font-semibold text-center" style={{ color: YEAR_COLORS[ano] }}>{ano}</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: "Salidas",      value: compData[ano]?.kpis.salidas_totales },
+                        { label: "Tasa Anual",   value: compData[ano]?.kpis.tasa_anual != null ? `${compData[ano].kpis.tasa_anual}%` : "—" },
+                        { label: "Voluntarias",  value: compData[ano]?.kpis.voluntarias },
+                        { label: "Involuntarias",value: compData[ano]?.kpis.involuntarias },
+                        { label: "HC Enero",     value: compData[ano]?.kpis.hc_enero },
+                        { label: "Permanencia",  value: compData[ano]?.kpis.permanencia_prom_meses != null ? `${compData[ano].kpis.permanencia_prom_meses} m` : "—" },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="rounded-lg p-2 text-center" style={{ background: "var(--card2)" }}>
+                          <p className="text-xs" style={{ color: "var(--text3)" }}>{label}</p>
+                          <p className="text-base font-semibold mt-0.5" style={{ color: "var(--text)" }}>{value ?? "—"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Salidas por empresa */}
+              <ChartCard title="Salidas por Empresa">
+                <PlotChart
+                  light
+                  data={salEmpCompTraces}
+                  layout={{ barmode: "group", margin: { t: 10, r: 20, b: 60, l: 20 }, bargap: 0.3, bargroupgap: 0.05 }}
+                  height={320}
+                />
+              </ChartCard>
+
+              {/* Tasa de rotación por empresa */}
+              <ChartCard title="Tasa de Rotación por Empresa (%)">
+                <PlotChart
+                  light
+                  data={tasaEmpCompTraces}
+                  layout={{ barmode: "group", margin: { t: 10, r: 20, b: 60, l: 20 }, bargap: 0.3, bargroupgap: 0.05 }}
+                  height={320}
+                />
+              </ChartCard>
+
+              {/* Voluntaria vs Involuntaria por año */}
+              <div className={`grid gap-4 grid-cols-${Math.min(anosDisponibles.length, 3)}`}>
+                {anosDisponibles.map((ano) => {
+                  const ts = compData[ano]?.tipoSalida;
+                  if (!ts?.labels?.length) return null;
+                  return (
+                    <ChartCard key={ano} title={`Vol. vs Invol. ${ano}`}>
+                      <PlotChart
+                        light
+                        data={[{ type: "pie", labels: ts.labels, values: ts.values, hole: 0.4,
+                          textinfo: "label+percent", textposition: "outside",
+                          textfont: { color: "#1e293b" },
+                          marker: { colors: ts.labels.map((l: string) => String(l).toUpperCase().includes("INV") ? "#f43f5e" : "#0d9488") } }]}
+                        layout={{ margin: { t: 16, r: 16, b: 16, l: 16 } }}
+                        height={260}
+                      />
+                    </ChartCard>
+                  );
+                })}
+              </div>
+
+              {/* Motivos top por año */}
+              <div className={`grid gap-4 grid-cols-${Math.min(anosDisponibles.length, 2)}`}>
+                {anosDisponibles.map((ano) => {
+                  const mot = compData[ano]?.motOrig ?? [];
+                  if (!mot.length) return null;
+                  const MOTIVO_COLOR_COMP: Record<string, string> = {
+                    "Renuncia": "#f43f5e", "Despido Injustificado": "#f59e0b", "Término de Contrato de Prueba": "#6366f1",
+                  };
+                  return (
+                    <ChartCard key={ano} title={`Motivos de Salida ${ano}`}>
+                      <PlotChart
+                        light
+                        data={[{ type: "bar", orientation: "h",
+                          x: mot.map((r: AnyObj) => r.cantidad),
+                          y: mot.map((r: AnyObj) => r.motivo),
+                          marker: { color: mot.map((r: AnyObj) => MOTIVO_COLOR_COMP[r.motivo] ?? C_GRAY) },
+                          text: mot.map((r: AnyObj) => String(r.cantidad)),
+                          textposition: "outside" }]}
+                        layout={{ margin: { t: 10, r: 50, b: 30, l: 10 },
+                          xaxis: { range: [0, Math.max(...mot.map((r: AnyObj) => r.cantidad)) * 1.2] },
+                          yaxis: { automargin: true } }}
+                        height={Math.max(200, mot.length * 42)}
+                      />
+                    </ChartCard>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── Tab: Detalle ── */}
       {activeTab === "detalle" && (
