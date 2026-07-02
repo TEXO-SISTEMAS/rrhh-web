@@ -534,11 +534,18 @@ export default function RotacionPage() {
   }, [respuestasData]);
 
   function handleResult(result: AnyObj) {
-    setData(result);
-    setRotacionData(result);
+    const newRows = (result.raw_rows as Row[]) ?? [];
+    const newYears = new Set(newRows.map((r) => String(r.ANO_REPORTE ?? "")));
+    const existingRows = (data?.raw_rows as Row[]) ?? [];
+    const mergedRows = [
+      ...existingRows.filter((r) => !newYears.has(String(r.ANO_REPORTE ?? ""))),
+      ...newRows,
+    ];
+    const merged = { ...result, raw_rows: mergedRows };
+    setData(merged);
+    setRotacionData(merged);
     setShowUpload(false);
-    const rows = (result.raw_rows as Row[]) ?? [];
-    register(FILTER_CONFIGS, rows, defaultLatestYear(rows));
+    register(FILTER_CONFIGS, mergedRows, defaultLatestYear(mergedRows));
   }
 
   function handleRespResult(result: AnyObj) {
