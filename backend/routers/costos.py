@@ -158,6 +158,8 @@ async def procesar_costos(
 
     try:
         df = normalizar_costos(pd.concat(dfs, ignore_index=True))
+        del dfs
+        gc.collect()
     except Exception:
         raise HTTPException(status_code=422, detail="Error al procesar el archivo de liquidaciones. Verificá que el formato sea correcto.")
 

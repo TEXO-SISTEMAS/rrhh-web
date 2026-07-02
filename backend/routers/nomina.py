@@ -189,6 +189,8 @@ async def procesar_nomina(file: UploadFile = File(...)):
     # ── Normalizar y filtrar activos ──────────────────────────────────────────
     try:
         df = normalizar_nomina(df_raw)
+        del df_raw
+        gc.collect()
     except Exception:
         raise HTTPException(status_code=422, detail="Error al procesar el archivo de nómina. Verificá que el formato sea correcto.")
 

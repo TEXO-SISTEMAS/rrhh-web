@@ -212,10 +212,8 @@ async def procesar_rotacion(files: List[UploadFile] = File(...)):
     # ── Separar activos y salidas ─────────────────────────────────────────────
     if "SITUACION" in df.columns:
         df_sal = df[df["SITUACION"].str.strip().str.upper() == "I"].copy()
-        df_act = df[df["SITUACION"].str.strip().str.upper() != "I"].copy()
     else:
         df_sal = pd.DataFrame()
-        df_act = df.copy()
 
     # ══════════════════════════════════════════════════════════════════════════
     # KPIs
@@ -338,7 +336,8 @@ async def procesar_rotacion(files: List[UploadFile] = File(...)):
     pregs_disp = [p for p in PREGUNTAS.keys() if p in df.columns]
 
     if pregs_disp:
-        df_ent = df.copy()
+        cols_ent = pregs_disp + (["EMPRESA"] if "EMPRESA" in df.columns else [])
+        df_ent = df[cols_ent].copy()
         for p in pregs_disp:
             df_ent[p] = pd.to_numeric(df_ent[p], errors="coerce")
         df_ent["SCORE_PROMEDIO"] = df_ent[pregs_disp].mean(axis=1).round(2)
@@ -396,7 +395,6 @@ async def procesar_rotacion(files: List[UploadFile] = File(...)):
         "raw_rows":     raw_rows,
         "tabla":        tabla,
     }
-    # Liberar memoria antes de serializar
-    del df, df_sal, all_dfs
+    del df, df_sal
     gc.collect()
     return JSONResponse(content=jsonable_encoder(result))

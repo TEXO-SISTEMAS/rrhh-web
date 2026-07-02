@@ -163,10 +163,14 @@ async def procesar_reclutamiento(files: List[UploadFile] = File(...)):
         raise HTTPException(status_code=422, detail="No se recibieron archivos válidos.")
 
     df_raw = pd.concat(dfs, ignore_index=True)
+    del dfs
+    gc.collect()
 
     # ── Normalizar ────────────────────────────────────────────────────────────
     try:
         df = normalizar_reclutamiento(df_raw)
+        del df_raw
+        gc.collect()
     except Exception:
         raise HTTPException(status_code=422, detail="Error al procesar el archivo de reclutamiento. Verificá que el formato sea correcto.")
 
