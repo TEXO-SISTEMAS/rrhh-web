@@ -33,11 +33,11 @@ const TABS = [
 ];
 
 // ── Paleta corporativa para directorio ───────────────────────────────────────
-const C_BLUE   = "#2563EB"; // dato principal / activos
+const C_BLUE   = "#0d9488"; // teal — dato principal / activos / voluntaria
 const C_GRAY   = "#94a3b8"; // dato secundario / referencia
-const C_GREEN  = "#22c55e"; // ingresos / positivo
-const C_RED    = "#ef4444"; // salidas / negativo / involuntaria
-const C_ORANGE = "#f97316"; // línea de tendencia / tasa
+const C_GREEN  = "#22c55e"; // verde — retención / positivo
+const C_RED    = "#f43f5e"; // coral — salidas / negativo / involuntaria
+const C_ORANGE = "#f59e0b"; // ámbar — línea de tendencia / tasa
 
 function barColors(n: number) {
   return Array.from({ length: n }, () => C_RED);
@@ -417,9 +417,9 @@ function computeFromRows(allRows: Row[]) {
   // ── NIVEL AIC ────────────────────────────────────────────────────────────
   const NIVEL_ORDER = ["JUNIOR", "INTERMEDIO", "SENIOR"];
   const NIVEL_COLOR: Record<string, string> = {
-    JUNIOR:      C_ORANGE,
-    INTERMEDIO:  C_BLUE,
-    SENIOR:      C_GREEN,
+    JUNIOR:      "#f59e0b",
+    INTERMEDIO:  "#6366f1",
+    SENIOR:      "#0d9488",
   };
   const cleanNivel = (r: Row) => {
     const v = String(r.NIVEL_AIC ?? "").trim().toUpperCase();
@@ -1386,7 +1386,7 @@ function RespuestasTab({
               textposition: "outside" as const,
               marker: {
                 color: [...dimensiones].sort((a, b) => a.promedio - b.promedio).map((d) =>
-                  d.promedio < 3 ? "#DC2626" : d.promedio < 4 ? "#D97706" : "#059669"
+                  d.promedio < 3 ? "#f43f5e" : d.promedio < 4 ? "#D97706" : "#059669"
                 ),
               },
             }]}
@@ -1494,7 +1494,7 @@ function RespuestasTab({
                 name: "Sí",
                 x: volveriaEmp.map((r) => r.EMPRESA),
                 y: volveriaEmp.map((r) => r.si),
-                marker: { color: "#059669" },
+                marker: { color: "#0d9488" },
                 text: volveriaEmp.map((r) => String(r.si)),
                 textposition: "inside" as const,
               },
@@ -1514,8 +1514,8 @@ function RespuestasTab({
                 x: volveriaEmp.map((r) => r.EMPRESA),
                 y: volveriaEmp.map((r) => r.pct),
                 yaxis: "y2",
-                line: { color: "#7C3AED", width: 2 },
-                marker: { color: "#7C3AED", size: 7 },
+                line: { color: "#6366f1", width: 2 },
+                marker: { color: "#6366f1", size: 7 },
                 text: volveriaEmp.map((r) => `${r.pct}%`),
                 textposition: "top center" as const,
               },
@@ -1547,7 +1547,7 @@ function RespuestasTab({
                     y: [...analisisMejorar.temas].sort((a, b) => a.pct - b.pct).map((t) => t.tema),
                     text: [...analisisMejorar.temas].sort((a, b) => a.pct - b.pct).map((t) => `${t.pct}% · ${t.personas}/${analisisMejorar.total}`),
                     textposition: "outside" as const,
-                    marker: { color: "#DC2626" },
+                    marker: { color: "#f43f5e" },
                     hovertemplate: "<b>%{y}</b><br>%{text}<extra></extra>",
                   } as AnyObj]}
                   layout={{
@@ -1559,7 +1559,7 @@ function RespuestasTab({
                 {analisisMejorar.narrativa && (
                   <div className="mt-3 rounded-lg px-4 py-3 text-sm leading-relaxed"
                     style={{ background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)", color: "var(--text)" }}>
-                    <span className="font-semibold text-xs uppercase tracking-wide" style={{ color: "#DC2626" }}>IA · </span>
+                    <span className="font-semibold text-xs uppercase tracking-wide" style={{ color: "#f43f5e" }}>IA · </span>
                     {analisisMejorar.narrativa}
                   </div>
                 )}
@@ -1578,7 +1578,7 @@ function RespuestasTab({
                     y: [...analisisGusto.temas].sort((a, b) => a.pct - b.pct).map((t) => t.tema),
                     text: [...analisisGusto.temas].sort((a, b) => a.pct - b.pct).map((t) => `${t.pct}% · ${t.personas}/${analisisGusto.total}`),
                     textposition: "outside" as const,
-                    marker: { color: "#059669" },
+                    marker: { color: "#0d9488" },
                     hovertemplate: "<b>%{y}</b><br>%{text}<extra></extra>",
                   } as AnyObj]}
                   layout={{
@@ -1625,7 +1625,7 @@ function RespuestasTab({
                     <td className="py-2 px-3 max-w-[180px] truncate">{row.MOTIVO_PRINCIPAL ?? "—"}</td>
                     {pCols.map((p) => {
                       const v = row[p];
-                      const color = v == null ? "var(--text3)" : Number(v) < 3 ? "#DC2626" : Number(v) < 4 ? "#D97706" : "#059669";
+                      const color = v == null ? "var(--text3)" : Number(v) < 3 ? "#f43f5e" : Number(v) < 4 ? "#D97706" : "#059669";
                       return (
                         <td key={p} className="py-2 px-3 text-center font-semibold" style={{ color }}>{v ?? "—"}</td>
                       );
