@@ -582,7 +582,7 @@ export default function RotacionPage() {
 
   const tiposUnicos   = Array.from(new Set(tipoEmp.map((r) => r.tipo)));
   const empresasUniq  = Array.from(new Set(tipoEmp.map((r) => r.empresa)));
-  const TIPO_COLOR: Record<string, string> = { "VOLUNTARIA": C_BLUE, "INVOLUNTARIA": C_RED };
+  const TIPO_COLOR: Record<string, string> = { "VOLUNTARIA": "#0d9488", "INVOLUNTARIA": "#f43f5e" };
   const tipoEmpTraces = tiposUnicos.map((tipo) => ({
     type: "bar" as const, name: tipo,
     x: empresasUniq,
@@ -593,9 +593,9 @@ export default function RotacionPage() {
   const motivosUnicos     = Array.from(new Set(motivoEmp.map((r) => r.motivo)));
   const empresasMotivo    = Array.from(new Set(motivoEmp.map((r) => r.empresa)));
   const MOTIVO_COLOR: Record<string, string> = {
-    "Renuncia": C_BLUE,
-    "Despido Injustificado": C_RED,
-    "Término de Contrato de Prueba": C_ORANGE,
+    "Renuncia":                      "#f43f5e",
+    "Despido Injustificado":          "#f59e0b",
+    "Término de Contrato de Prueba":  "#6366f1",
   };
   const motivoEmpTraces   = motivosUnicos.map((motivo) => ({
     type: "bar" as const, name: motivo,
@@ -678,7 +678,7 @@ export default function RotacionPage() {
                   data={[{ type: "pie", labels: tipoSalida.labels, values: tipoSalida.values, hole: 0.4,
                     textinfo: "label+percent", textposition: "outside",
                     textfont: { color: "#1e293b" },
-                    marker: { colors: tipoSalida.labels.map((l) => String(l).toUpperCase().includes("INV") ? "#ef4444" : "#2563EB") } }]}
+                    marker: { colors: tipoSalida.labels.map((l) => String(l).toUpperCase().includes("INV") ? "#f43f5e" : "#0d9488") } }]}
                   layout={{ margin: { t: 16, r: 16, b: 16, l: 16 } }}
                   height={300}
                 />
@@ -691,7 +691,7 @@ export default function RotacionPage() {
                   data={[{ type: "bar", orientation: "h",
                     x: motOrig.map((r) => r.cantidad),
                     y: motOrig.map((r) => r.motivo),
-                    marker: { color: C_RED },
+                    marker: { color: motOrig.map((r) => MOTIVO_COLOR[r.motivo] ?? C_GRAY) },
                     text: motOrig.map((r) => String(r.cantidad)),
                     textposition: "outside" }]}
                   layout={{

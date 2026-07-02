@@ -20,10 +20,10 @@ const COLOR_SEQ = [
   "#84cc16", "#14b8a6",
 ];
 
-/* Light palette — 5+5 complementary colors with strong contrast on white */
+/* Light palette — teal/coral base + complementary sequence */
 const LIGHT_COLOR_SEQ = [
-  "#2563EB", "#059669", "#D97706", "#7C3AED", "#DC2626",
-  "#0891B2", "#65A30D", "#C2410C", "#4338CA", "#0F766E",
+  "#0d9488", "#f43f5e", "#6366f1", "#f59e0b", "#0ea5e9",
+  "#a855f7", "#22c55e", "#e11d48", "#4338ca", "#0284c7",
 ];
 
 export { COLOR_SEQ, LIGHT_COLOR_SEQ };
