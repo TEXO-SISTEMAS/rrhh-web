@@ -1257,7 +1257,7 @@ export default function RotacionPage() {
                         { label: "Tasa Anual",   value: compData[ano]?.kpis.tasa_anual != null ? `${compData[ano].kpis.tasa_anual}%` : "—" },
                         { label: "Voluntarias",  value: compData[ano]?.kpis.voluntarias },
                         { label: "Involuntarias",value: compData[ano]?.kpis.involuntarias },
-                        { label: "HC Enero",     value: compData[ano]?.kpis.hc_enero },
+                        { label: "HC Enero",     value: (compData[ano]?.kpis as AnyObj)?.hc_enero },
                         { label: "Permanencia",  value: compData[ano]?.kpis.permanencia_prom_meses != null ? `${compData[ano].kpis.permanencia_prom_meses} m` : "—" },
                       ].map(({ label, value }) => (
                         <div key={label} className="rounded-lg p-2 text-center" style={{ background: "var(--card2)" }}>
