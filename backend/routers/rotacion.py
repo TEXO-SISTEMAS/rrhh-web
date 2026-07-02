@@ -161,7 +161,8 @@ def _safe_float(v) -> float | None:
 async def procesar_rotacion(files: List[UploadFile] = File(...)):
 
     # ── Leer y normalizar todas las hojas de todos los archivos ───────────────
-    all_dfs: list[pd.DataFrame] = []
+    # Concatenamos de forma incremental para no acumular todos los DFs en memoria
+    df: pd.DataFrame | None = None
     advertencias: list[str] = []
 
     for f in files:
@@ -192,17 +193,21 @@ async def procesar_rotacion(files: List[UploadFile] = File(...)):
                 if df_raw.empty or len(df_raw.columns) < 3:
                     continue
                 df_norm = normalizar_df(df_raw, df_raw.columns[0], mes, int(ano))
-                all_dfs.append(df_norm)
+                del df_raw
+                df = df_norm if df is None else pd.concat([df, df_norm], ignore_index=True)
+                del df_norm
+                gc.collect()
             except Exception:
                 advertencias.append(f"No se pudo procesar la hoja '{hoja}' en '{f.filename}'.")
 
-    if not all_dfs:
+        del xl, contents
+        gc.collect()
+
+    if df is None:
         raise HTTPException(
             status_code=422,
             detail="No se pudo extraer datos de los archivos. Verificá que las hojas no estén en la lista de ignorados y que el mes sea identificable."
         )
-
-    df = pd.concat(all_dfs, ignore_index=True)
 
     # ── Separar activos y salidas ─────────────────────────────────────────────
     if "SITUACION" in df.columns:
@@ -373,9 +378,10 @@ async def procesar_rotacion(files: List[UploadFile] = File(...)):
 
     # Tabla = raw_rows de salidas con info de motivos
     tabla_rot_cols = [c for c in [
-        "EMPRESA", "CARGO", "AREA", "DEPARTAMENTO",
-        "TIPO_SALIDA", "MOTIVO_SALIDA", "MOTIVO_CATEGORIA",
+        "EMPRESA", "NOMBRE", "CEDULA", "CARGO", "AREA", "DEPARTAMENTO",
+        "NIVEL_AIC", "TIPO_SALIDA", "MOTIVO_SALIDA", "MOTIVO_CATEGORIA",
         "ANO_REPORTE", "MES_REPORTE", "SITUACION", "MESES_PERMANENCIA",
+        "FECHA_INGRESO", "ANO_INGRESO",
     ] if c in df_sal.columns]
     tabla = _safe_records(df_sal[tabla_rot_cols].copy()) if not df_sal.empty else []
 
