@@ -187,7 +187,7 @@ export default function NominaPage() {
   const [data, setData] = useState<AnyObj | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [tab, setTab] = useState("distribucion");
-  const [anoUpload, setAnoUpload] = useState(String(new Date().getFullYear()));
+  const [anoUpload, setAnoUpload] = useState("2025");
 
   useEffect(() => { setMounted(true); }, []);
 
