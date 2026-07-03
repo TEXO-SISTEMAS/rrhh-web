@@ -174,9 +174,10 @@ async def procesar_rotacion(files: List[UploadFile] = File(...)):
         except Exception:
             raise HTTPException(status_code=400, detail=f"No se pudo leer '{f.filename}'. Verificá que sea un Excel válido.")
 
-        # Año desde nombre de archivo (igual que el original)
-        ano_match = re.search(r'20\d{2}', f.filename or "")
-        ano = int(ano_match.group()) if ano_match else date.today().year
+        # Año desde nombre de archivo — usa el último año encontrado
+        # (ej: "ROTACION 2024-2025.xlsx" → 2025, no 2024)
+        ano_matches = re.findall(r'20\d{2}', f.filename or "")
+        ano = int(ano_matches[-1]) if ano_matches else date.today().year
 
         hojas_validas = [
             h for h in xl.sheet_names
