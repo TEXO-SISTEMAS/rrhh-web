@@ -144,6 +144,7 @@ export default function ReclutamientoPage() {
   const [data, setData]     = useState<AnyObj | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [tab, setTab]       = useState("general");
+  const [replaceAll, setReplaceAll] = useState(false);
 
   useEffect(() => {
     if (reclutamientoData && !data) {
@@ -156,17 +157,20 @@ export default function ReclutamientoPage() {
 
   function handleResult(result: AnyObj) {
     const newRows = (result.tabla as Row[]) ?? [];
-    const newYears = new Set(newRows.map((r) => String(r.ANO ?? "")));
-    const existingRows = (data?.tabla as Row[]) ?? [];
-    const mergedRows = [
-      ...existingRows.filter((r) => !newYears.has(String(r.ANO ?? ""))),
-      ...newRows,
-    ];
-    const merged = { ...result, tabla: mergedRows };
+    let finalRows = newRows;
+    if (!replaceAll) {
+      const newYears = new Set(newRows.map((r) => String(r.ANO ?? "")));
+      const existingRows = (data?.tabla as Row[]) ?? [];
+      finalRows = [
+        ...existingRows.filter((r) => !newYears.has(String(r.ANO ?? ""))),
+        ...newRows,
+      ];
+    }
+    const merged = { ...result, tabla: finalRows };
     setData(merged);
     setReclutamientoData(merged);
     setShowUpload(false);
-    register(FILTER_CONFIGS, mergedRows, defaultLatestYear(mergedRows));
+    register(FILTER_CONFIGS, finalRows, defaultLatestYear(finalRows));
   }
 
   if (hydrating && !data) {
@@ -235,6 +239,10 @@ export default function ReclutamientoPage() {
             <p className="text-sm font-medium" style={{ color: "var(--text)" }}>Cargar nuevos datos de reclutamiento</p>
             <button onClick={() => setShowUpload(false)} className="text-xs transition" style={{ color: "var(--text3)" }}>Cancelar</button>
           </div>
+          <label className="flex items-center gap-2 mb-3 cursor-pointer select-none w-fit">
+            <input type="checkbox" checked={replaceAll} onChange={(e) => setReplaceAll(e.target.checked)} className="accent-indigo-500 w-4 h-4" />
+            <span className="text-xs" style={{ color: "var(--text2)" }}>Reemplazar todos los datos (elimina años anteriores)</span>
+          </label>
           <FileUpload endpoint="/api/reclutamiento" fieldName="files" multiple onResult={handleResult} />
         </div>
       )}
