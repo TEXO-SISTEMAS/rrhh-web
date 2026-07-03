@@ -1288,6 +1288,24 @@ export default function RotacionPage() {
                 ))}
               </div>
 
+              {/* Tendencia mensual de salidas por año */}
+              <ChartCard title="Tendencia Mensual de Salidas">
+                <PlotChart
+                  light
+                  data={anosDisponibles.map((ano) => ({
+                    type: "scatter" as const,
+                    mode: "lines+markers" as const,
+                    name: ano,
+                    x: (compData[ano]?.tasaMensual ?? []).map((r: AnyObj) => r.mes_nombre),
+                    y: (compData[ano]?.tasaMensual ?? []).map((r: AnyObj) => r.tasa),
+                    line: { color: YEAR_COLORS[ano] ?? C_GRAY },
+                    marker: { color: YEAR_COLORS[ano] ?? C_GRAY },
+                  }))}
+                  layout={{ showlegend: true, xaxis: { title: { text: "Mes" } }, yaxis: { title: { text: "Tasa %" }, ticksuffix: "%" }, margin: { t: 8, r: 16, b: 60, l: 60 } }}
+                  height={340}
+                />
+              </ChartCard>
+
               {/* Salidas por empresa */}
               <ChartCard title="Salidas por Empresa">
                 <PlotChart
