@@ -456,6 +456,125 @@ export default function ReclutamientoPage() {
                   />
                 </ChartCard>
               )}
+
+              {/* Tasa de cierre por agencia — barras agrupadas */}
+              {(() => {
+                const agencias = Array.from(new Set(rawRows.map((r) => String(r.AGENCIA ?? "")).filter(Boolean))).sort();
+                const traces = anosDisponiblesRec.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: agencias,
+                  y: agencias.map((ag) => {
+                    const agRows = rawRows.filter((r) => String(r.ANO ?? "") === ano && String(r.AGENCIA ?? "") === ag);
+                    if (!agRows.length) return 0;
+                    const cerradas = agRows.filter((r) => String(r.SITUACION ?? "").toUpperCase().includes("CERR") || String(r.STATUS ?? "").toUpperCase().includes("CERR")).length;
+                    return Math.round(cerradas / agRows.length * 1000) / 10;
+                  }),
+                  marker: { color: YEAR_COLORS_REC[ano] },
+                  text: agencias.map((ag) => {
+                    const agRows = rawRows.filter((r) => String(r.ANO ?? "") === ano && String(r.AGENCIA ?? "") === ag);
+                    if (!agRows.length) return "";
+                    const cerradas = agRows.filter((r) => String(r.SITUACION ?? "").toUpperCase().includes("CERR") || String(r.STATUS ?? "").toUpperCase().includes("CERR")).length;
+                    return `${Math.round(cerradas / agRows.length * 1000) / 10}%`;
+                  }),
+                  textposition: "outside" as const,
+                }));
+                return agencias.length > 0 ? (
+                  <ChartCard title="Tasa de Cierre por Agencia — Comparación Anual">
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { title: { text: "Agencia" } }, yaxis: { title: { text: "%" }, range: [0, 115] }, margin: { t: 24, r: 16, b: 60, l: 60 }, showlegend: true }}
+                      height={360}
+                    />
+                  </ChartCard>
+                ) : null;
+              })()}
+
+              {/* Días promedio por agencia — barras agrupadas */}
+              {(() => {
+                const agencias = Array.from(new Set(rawRows.map((r) => String(r.AGENCIA ?? "")).filter(Boolean))).sort();
+                const traces = anosDisponiblesRec.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: agencias,
+                  y: agencias.map((ag) => {
+                    const dr = rawRows.filter((r) => String(r.ANO ?? "") === ano && String(r.AGENCIA ?? "") === ag && r.DIAS_CIERRE != null && Number(r.DIAS_CIERRE) > 0);
+                    return dr.length ? Math.round(dr.reduce((s, r) => s + Number(r.DIAS_CIERRE), 0) / dr.length) : 0;
+                  }),
+                  marker: { color: YEAR_COLORS_REC[ano] },
+                }));
+                return agencias.length > 0 ? (
+                  <ChartCard title="Días Promedio de Cierre por Agencia — Comparación Anual">
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { title: { text: "Agencia" } }, yaxis: { title: { text: "Días" }, ticksuffix: "d" }, margin: { t: 8, r: 16, b: 60, l: 60 }, showlegend: true }}
+                      height={360}
+                    />
+                  </ChartCard>
+                ) : null;
+              })()}
+
+              {/* Distribución de estados por año — barras apiladas */}
+              {(() => {
+                const ESTADOS = [
+                  { label: "Cerradas",   color: "#0d9488", fn: (r: Row) => String(r.SITUACION ?? "").toUpperCase().includes("CERR") || String(r.STATUS ?? "").toUpperCase().includes("CERR") },
+                  { label: "Abiertas",   color: "#6366f1", fn: (r: Row) => String(r.SITUACION ?? "").toUpperCase().includes("ABIERT") || String(r.STATUS ?? "").toUpperCase().includes("ABIERT") },
+                  { label: "Canceladas", color: "#f43f5e", fn: (r: Row) => String(r.SITUACION ?? "").toUpperCase().includes("CANCEL") || String(r.STATUS ?? "").toUpperCase().includes("CANCEL") },
+                  { label: "Pausadas",   color: "#f59e0b", fn: (r: Row) => String(r.SITUACION ?? "").toUpperCase().includes("PAUS")   || String(r.STATUS ?? "").toUpperCase().includes("PAUS") },
+                ];
+                const traces = ESTADOS.map(({ label, color, fn }) => ({
+                  type: "bar" as const,
+                  name: label,
+                  x: anosDisponiblesRec,
+                  y: anosDisponiblesRec.map((ano) => rawRows.filter((r) => String(r.ANO ?? "") === ano && fn(r)).length),
+                  marker: { color },
+                }));
+                return (
+                  <ChartCard title="Distribución de Estados por Año">
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "stack", xaxis: { title: { text: "Año" } }, yaxis: { title: { text: "Búsquedas" } }, margin: { t: 8, r: 16, b: 48, l: 60 }, showlegend: true }}
+                      height={340}
+                    />
+                  </ChartCard>
+                );
+              })()}
+
+              {/* Canal de ingreso por año — donuts lado a lado */}
+              {(() => {
+                const allCanales = Array.from(new Set(rawRows.map((r) => String(r.TIPO_INGRESO ?? "")).filter(Boolean)));
+                if (!allCanales.length) return null;
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {anosDisponiblesRec.map((ano) => {
+                      const canalMap: Record<string, number> = {};
+                      rawRows.filter((r) => String(r.ANO ?? "") === ano && r.TIPO_INGRESO).forEach((r) => {
+                        const k = String(r.TIPO_INGRESO);
+                        canalMap[k] = (canalMap[k] ?? 0) + 1;
+                      });
+                      const labels = Object.keys(canalMap);
+                      const values = Object.values(canalMap);
+                      return labels.length > 0 ? (
+                        <ChartCard key={ano} title={`Canal de Ingreso ${ano}`}>
+                          <PlotChart
+                            light
+                            data={[{ type: "pie", labels, values, hole: 0.4,
+                              textinfo: "percent", textposition: "inside", insidetextorientation: "radial",
+                              textfont: { color: "#ffffff", size: 12 },
+                              marker: { colors: LIGHT_COLOR_SEQ },
+                            }]}
+                            layout={{ margin: { t: 16, r: 16, b: 16, l: 16 }, showlegend: true }}
+                            height={300}
+                          />
+                        </ChartCard>
+                      ) : null;
+                    })}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
