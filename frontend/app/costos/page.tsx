@@ -217,6 +217,7 @@ export default function CostosPage() {
   const [activeTab, setActiveTab]     = useState("agencia");
   const [showUpload, setShowUpload]   = useState(false);
   const [anoUpload, setAnoUpload]     = useState("2025");
+  const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -271,12 +272,18 @@ export default function CostosPage() {
   }
 
   function handleFiles(files: FileList) {
-    const arr = Array.from(files);
+    setPendingFiles(Array.from(files));
+  }
+
+  function confirmUploadCostos() {
+    if (!pendingFiles || !anoUpload.trim()) return;
+    const arr = pendingFiles;
     const prevData = data;
     setStoredFiles(arr);
     setData(null);
     setHojas([]);
     setHojaActiva("");
+    setPendingFiles(null);
     postFiles(arr, undefined, prevData);
   }
 
@@ -378,6 +385,53 @@ export default function CostosPage() {
 
   return (
     <div>
+      {/* ── Modal de año ──────────────────────────────────────────────────── */}
+      {pendingFiles && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.65)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setPendingFiles(null); }}
+        >
+          <div className="w-full max-w-sm rounded-2xl p-6 space-y-5 shadow-2xl"
+            style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+            <div>
+              <p className="text-base font-semibold" style={{ color: "var(--text)" }}>
+                ¿A qué año corresponde este archivo?
+              </p>
+              <p className="text-xs mt-1" style={{ color: "var(--text3)" }}>
+                {pendingFiles.map((f) => f.name).join(", ")}
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-2" style={{ color: "var(--text2)" }}>Año</label>
+              <input
+                autoFocus
+                type="number"
+                value={anoUpload}
+                onChange={(e) => setAnoUpload(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") confirmUploadCostos(); if (e.key === "Escape") setPendingFiles(null); }}
+                placeholder="2025"
+                min={2000} max={2100}
+                className="w-full rounded-lg px-4 py-3 text-lg font-semibold text-center tracking-widest"
+                style={{ background: "var(--card2)", border: `1px solid ${anoUpload ? "var(--accent)" : "var(--border)"}`, color: "var(--text)", outline: "none" }}
+              />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setPendingFiles(null)}
+                className="flex-1 rounded-lg py-2.5 text-sm font-medium"
+                style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text2)" }}>
+                Cancelar
+              </button>
+              <button onClick={confirmUploadCostos} disabled={!anoUpload.trim()}
+                className="flex-1 rounded-lg py-2.5 text-sm font-semibold disabled:opacity-40"
+                style={{ background: "var(--accent)", color: "#fff" }}>
+                Subir archivos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -400,19 +454,6 @@ export default function CostosPage() {
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium" style={{ color: "var(--text)" }}>Cargar nuevos datos de costos</p>
             <button onClick={() => { setShowUpload(false); setError(null); }} className="text-xs transition" style={{ color: "var(--text3)" }}>Cancelar</button>
-          </div>
-          <div className="mb-3">
-            <label className="block text-xs font-medium mb-1" style={{ color: "var(--text2)" }}>
-              Año del archivo <span style={{ color: "#f43f5e" }}>*</span>
-            </label>
-            <input
-              type="number"
-              value={anoUpload}
-              onChange={(e) => setAnoUpload(e.target.value)}
-              placeholder="2025"
-              className="w-48 rounded-lg px-3 py-2 text-sm"
-              style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text)" }}
-            />
           </div>
           <div
             onClick={() => inputRef.current?.click()}

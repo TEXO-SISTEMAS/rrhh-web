@@ -510,7 +510,6 @@ export default function RotacionPage() {
   const [data, setData]       = useState<AnyObj | null>(null);
   const [activeTab, setActiveTab] = useState("general");
   const [showUpload, setShowUpload] = useState(false);
-  const [anoUpload, setAnoUpload]   = useState("2025");
   const [respData, setRespData]     = useState<AnyObj | null>(null);
   const [showRespUpload, setShowRespUpload] = useState(false);
 
@@ -573,22 +572,9 @@ export default function RotacionPage() {
             Subí uno o más archivos Excel de rotación (un archivo por año). Claude categorizará motivos de salida automáticamente.
           </p>
         </div>
-        <div className="w-full max-w-md space-y-3">
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: "var(--text2)" }}>
-              Año del archivo <span style={{ color: "#f43f5e" }}>*</span>
-            </label>
-            <input
-              type="number"
-              value={anoUpload}
-              onChange={(e) => setAnoUpload(e.target.value)}
-              placeholder="2025"
-              className="w-full rounded-lg px-3 py-2 text-sm"
-              style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text)" }}
-            />
-          </div>
+        <div className="w-full max-w-md">
           <FileUpload endpoint="/api/rotacion" fieldName="files" multiple onResult={handleResult}
-            extraFields={anoUpload ? { ano: anoUpload } : undefined} />
+            yearField={{ key: "ano", defaultValue: "2025" }} />
         </div>
       </div>
     );
@@ -703,21 +689,8 @@ export default function RotacionPage() {
             <p className="text-sm font-medium" style={{ color: "var(--text)" }}>Cargar nuevos datos de rotación</p>
             <button onClick={() => setShowUpload(false)} className="text-xs transition" style={{ color: "var(--text3)" }}>Cancelar</button>
           </div>
-          <div className="mb-3">
-            <label className="block text-xs font-medium mb-1" style={{ color: "var(--text2)" }}>
-              Año del archivo <span style={{ color: "#f43f5e" }}>*</span>
-            </label>
-            <input
-              type="number"
-              value={anoUpload}
-              onChange={(e) => setAnoUpload(e.target.value)}
-              placeholder="2025"
-              className="w-48 rounded-lg px-3 py-2 text-sm"
-              style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text)" }}
-            />
-          </div>
           <FileUpload endpoint="/api/rotacion" fieldName="files" multiple onResult={handleResult}
-            extraFields={anoUpload ? { ano: anoUpload } : undefined} />
+            yearField={{ key: "ano", defaultValue: "2025" }} />
         </div>
       )}
 

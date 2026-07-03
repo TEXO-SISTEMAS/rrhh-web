@@ -209,7 +209,6 @@ export default function NominaPage() {
   const [data, setData] = useState<AnyObj | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [tab, setTab] = useState("distribucion");
-  const [anoUpload, setAnoUpload] = useState("2025");
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -261,18 +260,9 @@ export default function NominaPage() {
             Subí el Excel de nómina para analizar headcount, géneros, generaciones y brecha salarial por empresa.
           </p>
         </div>
-        <div className="w-full max-w-md space-y-3">
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-medium whitespace-nowrap" style={{ color: "var(--text2)" }}>Año de evaluación</label>
-            <input
-              type="number"
-              value={anoUpload}
-              onChange={(e) => setAnoUpload(e.target.value)}
-              className="w-28 rounded-lg px-3 py-2 text-sm text-center"
-              style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text)" }}
-            />
-          </div>
-          <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult} extraFields={{ ano: anoUpload }} />
+        <div className="w-full max-w-md">
+          <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult}
+            yearField={{ key: "ano", label: "¿A qué año de evaluación corresponde este archivo?", defaultValue: "2025" }} />
         </div>
       </div>
     );
@@ -318,17 +308,8 @@ export default function NominaPage() {
             <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>Actualizar datos de nómina</span>
             <button onClick={() => setShowUpload(false)} className="text-xs px-3 py-1 rounded-lg" style={{ background: "var(--card2)", color: "var(--text2)" }}>Cancelar</button>
           </div>
-          <div className="flex items-center gap-3 mb-3">
-            <label className="text-sm font-medium whitespace-nowrap" style={{ color: "var(--text2)" }}>Año de evaluación</label>
-            <input
-              type="number"
-              value={anoUpload}
-              onChange={(e) => setAnoUpload(e.target.value)}
-              className="w-28 rounded-lg px-3 py-2 text-sm text-center"
-              style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text)" }}
-            />
-          </div>
-          <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult} extraFields={{ ano: anoUpload }} />
+          <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult}
+            yearField={{ key: "ano", label: "¿A qué año de evaluación corresponde este archivo?", defaultValue: "2025" }} />
         </div>
       )}
 

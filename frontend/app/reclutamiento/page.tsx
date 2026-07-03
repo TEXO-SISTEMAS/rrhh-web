@@ -151,7 +151,6 @@ export default function ReclutamientoPage() {
   const { selected, register } = useFilter();
   const [data, setData]     = useState<AnyObj | null>(null);
   const [showUpload, setShowUpload] = useState(false);
-  const [anoUpload, setAnoUpload]   = useState("2025");
   const [tab, setTab]       = useState("general");
   const [replaceAll, setReplaceAll] = useState(false);
 
@@ -200,22 +199,9 @@ export default function ReclutamientoPage() {
             Subí uno o más archivos Excel con el historial de búsquedas. Incluye tiempos de cierre, canales y eficiencia por responsable.
           </p>
         </div>
-        <div className="w-full max-w-md space-y-3">
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: "var(--text2)" }}>
-              Año del archivo <span style={{ color: "#f43f5e" }}>*</span>
-            </label>
-            <input
-              type="number"
-              value={anoUpload}
-              onChange={(e) => setAnoUpload(e.target.value)}
-              placeholder="2025"
-              className="w-full rounded-lg px-3 py-2 text-sm"
-              style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text)" }}
-            />
-          </div>
+        <div className="w-full max-w-md">
           <FileUpload endpoint="/api/reclutamiento" fieldName="files" multiple onResult={handleResult}
-            extraFields={anoUpload ? { ano: anoUpload } : undefined} />
+            yearField={{ key: "ano", defaultValue: "2025" }} />
         </div>
       </div>
     );
@@ -262,25 +248,12 @@ export default function ReclutamientoPage() {
             <p className="text-sm font-medium" style={{ color: "var(--text)" }}>Cargar nuevos datos de reclutamiento</p>
             <button onClick={() => setShowUpload(false)} className="text-xs transition" style={{ color: "var(--text3)" }}>Cancelar</button>
           </div>
-          <div className="mb-3">
-            <label className="block text-xs font-medium mb-1" style={{ color: "var(--text2)" }}>
-              Año del archivo <span style={{ color: "#f43f5e" }}>*</span>
-            </label>
-            <input
-              type="number"
-              value={anoUpload}
-              onChange={(e) => setAnoUpload(e.target.value)}
-              placeholder="2025"
-              className="w-48 rounded-lg px-3 py-2 text-sm"
-              style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text)" }}
-            />
-          </div>
           <label className="flex items-center gap-2 mb-3 cursor-pointer select-none w-fit">
             <input type="checkbox" checked={replaceAll} onChange={(e) => setReplaceAll(e.target.checked)} className="accent-indigo-500 w-4 h-4" />
             <span className="text-xs" style={{ color: "var(--text2)" }}>Reemplazar todos los datos (elimina años anteriores)</span>
           </label>
           <FileUpload endpoint="/api/reclutamiento" fieldName="files" multiple onResult={handleResult}
-            extraFields={anoUpload ? { ano: anoUpload } : undefined} />
+            yearField={{ key: "ano", defaultValue: "2025" }} />
         </div>
       )}
 
