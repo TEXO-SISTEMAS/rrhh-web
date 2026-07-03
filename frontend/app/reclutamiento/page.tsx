@@ -8,11 +8,12 @@ import TabBar from "@/components/TabBar";
 import DataTable from "@/components/DataTable";
 import { useDashboard } from "@/context/DashboardContext";
 import { useFilter } from "@/context/FilterContext";
-import { Row, sumField, groupBy, applyFilters, FilterConfig, defaultYear2025 } from "@/lib/filterUtils";
+import { Row, sumField, groupBy, applyFilters, FilterConfig } from "@/lib/filterUtils";
 
 type AnyObj = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 const FILTER_CONFIGS: FilterConfig[] = [
+  { label: "Año",        field: "ANO" },
   { label: "Agencia",    field: "AGENCIA" },
   { label: "Nivel",      field: "NIVEL" },
   { label: "Estado",     field: "SITUACION" },
@@ -24,11 +25,18 @@ const MESES: Record<number, string> = {
 };
 
 const TABS = [
-  { id: "general",   label: "General",        icon: "📊" },
-  { id: "fuentes",   label: "Fuentes / Canal", icon: "🌿" },
-  { id: "tiempos",   label: "Tiempos",        icon: "⏱️" },
-  { id: "detalle",   label: "Detalle",        icon: "📋" },
+  { id: "general",      label: "General",         icon: "📊" },
+  { id: "fuentes",      label: "Fuentes / Canal",  icon: "🌿" },
+  { id: "tiempos",      label: "Tiempos",          icon: "⏱️" },
+  { id: "comparacion",  label: "Comparación",      icon: "⚖️" },
+  { id: "detalle",      label: "Detalle",          icon: "📋" },
 ];
+
+function defaultLatestYear(rows: Row[]): Record<string, string[]> {
+  const years = Array.from(new Set(rows.map((r) => String(r.ANO ?? "")).filter(Boolean))).sort();
+  const latest = years[years.length - 1];
+  return latest ? { ANO: [latest] } : {};
+}
 
 function isCerrada(r: Row) {
   return String(r.SITUACION ?? "").toUpperCase().includes("CERR") ||
@@ -141,17 +149,24 @@ export default function ReclutamientoPage() {
     if (reclutamientoData && !data) {
       setData(reclutamientoData);
       const rows = (reclutamientoData.tabla as Row[]) ?? [];
-      register(FILTER_CONFIGS, rows.filter((r) => String(r.ANO ?? "") === "2025"), {});
+      register(FILTER_CONFIGS, rows, defaultLatestYear(rows));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reclutamientoData]);
 
   function handleResult(result: AnyObj) {
-    setData(result);
-    setReclutamientoData(result);
+    const newRows = (result.tabla as Row[]) ?? [];
+    const newYears = new Set(newRows.map((r) => String(r.ANO ?? "")));
+    const existingRows = (data?.tabla as Row[]) ?? [];
+    const mergedRows = [
+      ...existingRows.filter((r) => !newYears.has(String(r.ANO ?? ""))),
+      ...newRows,
+    ];
+    const merged = { ...result, tabla: mergedRows };
+    setData(merged);
+    setReclutamientoData(merged);
     setShowUpload(false);
-    const rows = (result.tabla as Row[]) ?? [];
-    register(FILTER_CONFIGS, rows.filter((r) => String(r.ANO ?? "") === "2025"), {});
+    register(FILTER_CONFIGS, mergedRows, defaultLatestYear(mergedRows));
   }
 
   if (hydrating && !data) {
@@ -179,10 +194,21 @@ export default function ReclutamientoPage() {
     );
   }
 
-  const rawRows: Row[] = ((data.tabla as Row[]) ?? []).filter((r) => String(r.ANO ?? "") === "2025");
-  const filteredRows   = applyFilters(rawRows, selected);
+  const rawRows: Row[]  = (data.tabla as Row[]) ?? [];
+  const filteredRows    = applyFilters(rawRows, selected);
   const { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno } =
     computeFromRows(filteredRows);
+
+  // ── Comparación ───────────────────────────────────────────────────────────
+  const anosDisponiblesRec = Array.from(new Set(rawRows.map((r) => String(r.ANO ?? "")).filter(Boolean))).sort();
+  const compDataRec = Object.fromEntries(
+    anosDisponiblesRec.map((ano) => [ano, computeFromRows(rawRows.filter((r) => String(r.ANO ?? "") === ano))])
+  );
+  const YEAR_COLORS_REC: Record<string, string> = {
+    [anosDisponiblesRec[0]]: "#0d9488",
+    [anosDisponiblesRec[1]]: "#6366f1",
+    [anosDisponiblesRec[2]]: "#f59e0b",
+  };
 
   return (
     <div>
@@ -351,9 +377,85 @@ export default function ReclutamientoPage() {
         </div>
       )}
 
+      {/* ── Tab: Comparación ── */}
+      {tab === "comparacion" && (
+        <div className="space-y-5">
+          {anosDisponiblesRec.length < 2 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <p className="text-4xl">📂</p>
+              <p className="text-sm" style={{ color: "var(--text2)" }}>
+                Subí datos de al menos dos años para comparar.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* KPI cards por año */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {anosDisponiblesRec.map((ano) => {
+                  const d = compDataRec[ano];
+                  return (
+                    <div key={ano} className="rounded-xl p-4 space-y-2" style={{ background: "var(--card)", border: `1px solid ${YEAR_COLORS_REC[ano] ?? "var(--border)"}` }}>
+                      <p className="text-xs font-semibold" style={{ color: YEAR_COLORS_REC[ano] ?? "var(--text2)" }}>{ano}</p>
+                      <p className="text-lg font-bold" style={{ color: "var(--text)" }}>{d?.kpis.total_busquedas ?? 0}</p>
+                      <p className="text-xs" style={{ color: "var(--text2)" }}>Total Búsquedas</p>
+                      <div className="flex gap-4 pt-1">
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{d?.kpis.cerradas_pct != null ? `${d.kpis.cerradas_pct}%` : "—"}</p>
+                          <p className="text-xs" style={{ color: "var(--text3)" }}>Tasa Cierre</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{d?.kpis.dias_promedio != null ? `${d.kpis.dias_promedio}d` : "—"}</p>
+                          <p className="text-xs" style={{ color: "var(--text3)" }}>Días Prom.</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Búsquedas por Agencia — barras agrupadas */}
+              {(() => {
+                const agencias = Array.from(new Set(rawRows.map((r) => String(r.AGENCIA ?? "")).filter(Boolean))).sort();
+                const traces = anosDisponiblesRec.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: agencias,
+                  y: agencias.map((ag) => rawRows.filter((r) => String(r.ANO ?? "") === ano && String(r.AGENCIA ?? "") === ag).length),
+                  marker: { color: YEAR_COLORS_REC[ano] },
+                }));
+                return agencias.length > 0 ? (
+                  <ChartCard title="Búsquedas por Agencia — Comparación Anual">
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { title: { text: "Agencia" } }, yaxis: { title: { text: "Búsquedas" } }, margin: { t: 8, r: 16, b: 60, l: 60 }, showlegend: true }}
+                      height={340}
+                    />
+                  </ChartCard>
+                ) : null;
+              })()}
+
+              {/* Tendencia mensual por año */}
+              {anosDisponiblesRec.length > 0 && (
+                <ChartCard title="Tendencia Mensual de Búsquedas">
+                  <PlotChart
+                    light
+                    data={anosDisponiblesRec.flatMap((ano) =>
+                      (compDataRec[ano]?.lineTraces ?? []).map((t) => ({ ...t, name: ano, line: { color: YEAR_COLORS_REC[ano] } }))
+                    )}
+                    layout={{ showlegend: true, xaxis: { title: { text: "Mes" } }, yaxis: { title: { text: "Búsquedas" } }, margin: { t: 8, r: 16, b: 60, l: 60 } }}
+                    height={340}
+                  />
+                </ChartCard>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* ── Tab: Detalle ── */}
       {tab === "detalle" && (
-        <DataTable rows={rawRows} title="Detalle de Búsquedas" />
+        <DataTable rows={filteredRows} title="Detalle de Búsquedas" />
       )}
     </div>
   );

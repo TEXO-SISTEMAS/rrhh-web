@@ -8,13 +8,14 @@ import DataTable from "@/components/DataTable";
 import { useDashboard } from "@/context/DashboardContext";
 import { useFilter } from "@/context/FilterContext";
 import { authHeaders } from "@/lib/auth";
-import { Row, sumField, groupBy, fmtGs, applyFilters, FilterConfig, defaultYear2025 } from "@/lib/filterUtils";
+import { Row, sumField, groupBy, fmtGs, applyFilters, FilterConfig } from "@/lib/filterUtils";
 
 type AnyObj = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const FILTER_CONFIGS: FilterConfig[] = [
+  { label: "Año",           field: "ANO_SALIDA" },
   { label: "Agencia",       field: "AGENCIA" },
   { label: "Nivel AIC",     field: "NIVEL_AIC" },
   { label: "Tipo Salida",   field: "TIPO_SALIDA" },
@@ -36,6 +37,12 @@ const CONCEPTOS: [string, string][] = [
   ["Sobrecosto",          "SOBRECOSTO"],
 ];
 
+function defaultLatestYear(rows: Row[]): Record<string, string[]> {
+  const years = Array.from(new Set(rows.map((r) => String(r.ANO_SALIDA ?? "")).filter(Boolean))).sort();
+  const latest = years[years.length - 1];
+  return latest ? { ANO_SALIDA: [latest] } : {};
+}
+
 function agColors(n: number) {
   return Array.from({ length: n }, (_, i) => LIGHT_COLOR_SEQ[i % LIGHT_COLOR_SEQ.length]);
 }
@@ -48,9 +55,10 @@ const CONCEPT_COLORS = [
 ];
 
 const TABS = [
-  { id: "agencia",     label: "Por Agencia",          icon: "🏢" },
-  { id: "composicion", label: "Composición de Costos", icon: "🌿" },
-  { id: "detalle",     label: "Detalle",               icon: "📄" },
+  { id: "agencia",      label: "Por Agencia",          icon: "🏢" },
+  { id: "composicion",  label: "Composición de Costos", icon: "🌿" },
+  { id: "comparacion",  label: "Comparación",           icon: "⚖️" },
+  { id: "detalle",      label: "Detalle",               icon: "📄" },
 ];
 
 function computeFromRows(rows: Row[]) {
@@ -216,12 +224,12 @@ export default function CostosPage() {
       setHojas((costosData.hojas as string[]) ?? []);
       setHojaActiva((costosData.hoja_activa as string) ?? "");
       const rows = (costosData.raw_rows as Row[]) ?? [];
-      register(FILTER_CONFIGS, rows.filter((r) => String(r.ANO_SALIDA ?? "") === "2025"), {});
+      register(FILTER_CONFIGS, rows, defaultLatestYear(rows));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [costosData]);
 
-  async function postFiles(files: File[], hoja?: string) {
+  async function postFiles(files: File[], hoja?: string, prevData?: AnyObj | null) {
     setLoading(true);
     setError(null);
     const form = new FormData();
@@ -238,14 +246,21 @@ export default function CostosPage() {
         throw new Error(detail?.detail ?? `Error ${res.status}`);
       }
       const json = await res.json();
-      setData(json);
-      setCostosData(json);
-      setHojas(json.hojas ?? []);
-      setHojaActiva(json.hoja_activa ?? "");
+      let merged = json;
+      if (prevData) {
+        const newRows = (json.raw_rows as Row[]) ?? [];
+        const newYears = new Set(newRows.map((r) => String(r.ANO_SALIDA ?? "")));
+        const existingRows = (prevData.raw_rows as Row[]) ?? [];
+        merged = { ...json, raw_rows: [...existingRows.filter((r) => !newYears.has(String(r.ANO_SALIDA ?? ""))), ...newRows] };
+      }
+      setData(merged);
+      setCostosData(merged);
+      setHojas(merged.hojas ?? []);
+      setHojaActiva(merged.hoja_activa ?? "");
       setActiveTab("agencia");
       setShowUpload(false);
-      const rawRows = (json.raw_rows as Row[]) ?? [];
-      register(FILTER_CONFIGS, rawRows.filter((r) => String(r.ANO_SALIDA ?? "") === "2025"), {});
+      const allRows = (merged.raw_rows as Row[]) ?? [];
+      register(FILTER_CONFIGS, allRows, defaultLatestYear(allRows));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
@@ -255,11 +270,12 @@ export default function CostosPage() {
 
   function handleFiles(files: FileList) {
     const arr = Array.from(files);
+    const prevData = data;
     setStoredFiles(arr);
     setData(null);
     setHojas([]);
     setHojaActiva("");
-    postFiles(arr);
+    postFiles(arr, undefined, prevData);
   }
 
   function handleHojaChange(h: string) {
@@ -342,11 +358,21 @@ export default function CostosPage() {
   }
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
-  const rawRows: Row[] = ((data!.raw_rows as Row[]) ?? []).filter((r) => String(r.ANO_SALIDA ?? "") === "2025");
-  const filteredRows   = applyFilters(rawRows, selected);
+  const rawRows: Row[]   = (data!.raw_rows as Row[]) ?? [];
+  const filteredRows     = applyFilters(rawRows, selected);
   const { kpis, agSob, agSobDesc, agCant, agProm, composicion, compPorAgencia, tipoData, tipoProm, top10motivo, nivCosto, nivCant, nivSob, nivProm, nivComp, sobAno, liqAno, sobMensual, costoMensual } =
     computeFromRows(filteredRows);
-  const tabla: AnyObj[] = (data!.tabla as AnyObj[]) ?? [];
+
+  // ── Comparación ───────────────────────────────────────────────────────────
+  const anosDisponiblesCos = Array.from(new Set(rawRows.map((r) => String(r.ANO_SALIDA ?? "")).filter(Boolean))).sort();
+  const compDataCos = Object.fromEntries(
+    anosDisponiblesCos.map((ano) => [ano, computeFromRows(rawRows.filter((r) => String(r.ANO_SALIDA ?? "") === ano))])
+  );
+  const YEAR_COLORS_COS: Record<string, string> = {
+    [anosDisponiblesCos[0]]: "#0d9488",
+    [anosDisponiblesCos[1]]: "#6366f1",
+    [anosDisponiblesCos[2]]: "#f59e0b",
+  };
 
   return (
     <div>
@@ -614,9 +640,110 @@ export default function CostosPage() {
 
       {/* ── Tab: Por Tipo / Motivo ────────────────────────────────────────── */}
 
+      {/* ── Tab: Comparación ─────────────────────────────────────────────── */}
+      {activeTab === "comparacion" && (
+        <div className="space-y-5">
+          {anosDisponiblesCos.length < 2 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <p className="text-4xl">📂</p>
+              <p className="text-sm" style={{ color: "var(--text2)" }}>
+                Subí datos de al menos dos años para comparar.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* KPI cards por año */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {anosDisponiblesCos.map((ano) => {
+                  const d = compDataCos[ano];
+                  return (
+                    <div key={ano} className="rounded-xl p-4 space-y-2" style={{ background: "var(--card)", border: `1px solid ${YEAR_COLORS_COS[ano] ?? "var(--border)"}` }}>
+                      <p className="text-xs font-semibold" style={{ color: YEAR_COLORS_COS[ano] ?? "var(--text2)" }}>{ano}</p>
+                      <p className="text-lg font-bold" style={{ color: "var(--text)" }}>{d?.kpis.sobrecosto_fmt ?? "—"}</p>
+                      <p className="text-xs" style={{ color: "var(--text2)" }}>Sobrecosto</p>
+                      <div className="flex gap-4 pt-1">
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{d?.kpis.total_liquidaciones ?? 0}</p>
+                          <p className="text-xs" style={{ color: "var(--text3)" }}>Liquidaciones</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{d?.kpis.total_costo_fmt ?? "—"}</p>
+                          <p className="text-xs" style={{ color: "var(--text3)" }}>Costo Total</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Sobrecosto por Agencia — barras agrupadas */}
+              {(() => {
+                const agencias = Array.from(new Set(rawRows.map((r) => String(r.AGENCIA ?? "")).filter(Boolean))).sort();
+                const traces = anosDisponiblesCos.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: agencias,
+                  y: agencias.map((ag) => {
+                    const rows = rawRows.filter((r) => String(r.ANO_SALIDA ?? "") === ano && String(r.AGENCIA ?? "") === ag);
+                    return rows.reduce((s, r) => s + (Number(r.SOBRECOSTO) || 0), 0);
+                  }),
+                  marker: { color: YEAR_COLORS_COS[ano] },
+                }));
+                return agencias.length > 0 ? (
+                  <ChartCard title="Sobrecosto por Agencia — Comparación Anual" fullWidth>
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { title: { text: "Agencia" } }, yaxis: { title: { text: "Sobrecosto" } }, margin: { t: 8, r: 16, b: 60, l: 80 }, showlegend: true }}
+                      height={360}
+                    />
+                  </ChartCard>
+                ) : null;
+              })()}
+
+              {/* Liquidaciones por Agencia — barras agrupadas */}
+              {(() => {
+                const agencias = Array.from(new Set(rawRows.map((r) => String(r.AGENCIA ?? "")).filter(Boolean))).sort();
+                const traces = anosDisponiblesCos.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: agencias,
+                  y: agencias.map((ag) => rawRows.filter((r) => String(r.ANO_SALIDA ?? "") === ano && String(r.AGENCIA ?? "") === ag).length),
+                  marker: { color: YEAR_COLORS_COS[ano] },
+                }));
+                return agencias.length > 0 ? (
+                  <ChartCard title="Cantidad de Liquidaciones por Agencia — Comparación Anual" fullWidth>
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { title: { text: "Agencia" } }, yaxis: { title: { text: "Liquidaciones" } }, margin: { t: 8, r: 16, b: 60, l: 80 }, showlegend: true }}
+                      height={340}
+                    />
+                  </ChartCard>
+                ) : null;
+              })()}
+
+              {/* Evolución mensual sobrecosto */}
+              {compDataCos[anosDisponiblesCos[0]]?.sobMensual && (
+                <ChartCard title="Evolución Mensual del Sobrecosto" fullWidth>
+                  <PlotChart
+                    light
+                    data={anosDisponiblesCos.flatMap((ano) =>
+                      (compDataCos[ano]?.sobMensual ?? []).map((t) => ({ ...t, name: ano, line: { color: YEAR_COLORS_COS[ano] } }))
+                    )}
+                    layout={{ showlegend: true, xaxis: { title: { text: "Mes" } }, yaxis: { title: { text: "Sobrecosto" } }, margin: { t: 8, r: 16, b: 60, l: 80 } }}
+                    height={360}
+                  />
+                </ChartCard>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* ── Tab: Detalle ─────────────────────────────────────────────────── */}
       {activeTab === "detalle" && (
-        <DataTable rows={tabla} title="Detalle de Liquidaciones" />
+        <DataTable rows={filteredRows} title="Detalle de Liquidaciones" />
       )}
     </div>
   );
