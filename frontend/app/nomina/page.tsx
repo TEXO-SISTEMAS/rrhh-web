@@ -157,13 +157,35 @@ function computeFromRows(rows: Row[]) {
     }));
   })();
 
+  const brechaEmpresa = (() => {
+    const m = groupBy(salRows, "EMPRESA");
+    return Object.entries(m).map(([emp, r]) => {
+      const f = r.filter((x) => x.SEXO === "F");
+      const h = r.filter((x) => x.SEXO === "M");
+      return {
+        empresa: emp,
+        prom_mujeres: f.length ? Math.round(sumField(f, "SALARIO") / f.length) : 0,
+        prom_hombres: h.length ? Math.round(sumField(h, "SALARIO") / h.length) : 0,
+      };
+    });
+  })();
+
+  const salGlobal = {
+    mujeres: salRows.filter((r) => r.SEXO === "F").length
+      ? Math.round(sumField(salRows.filter((r) => r.SEXO === "F"), "SALARIO") / salRows.filter((r) => r.SEXO === "F").length)
+      : 0,
+    hombres: salRows.filter((r) => r.SEXO === "M").length
+      ? Math.round(sumField(salRows.filter((r) => r.SEXO === "M"), "SALARIO") / salRows.filter((r) => r.SEXO === "M").length)
+      : 0,
+  };
+
   const ANILLOS = ["ANILLO 1", "ANILLO 2", "ANILLO 3"];
   const anillosGenero = ANILLOS.map((anillo) => {
     const r = rows.filter((x) => String(x.SECCION ?? "").toUpperCase().trim() === anillo);
     return { anillo, mujeres: r.filter((x) => x.SEXO === "F").length, hombres: r.filter((x) => x.SEXO === "M").length };
   });
 
-  return { kpis, genero, genDist, lidFem, lidMasc, lidEmp, salEmp, brechaNivel, nac, anillosGenero, extPorNac, discapacidad, antiguedadRangos, antiguedadPorTipo };
+  return { kpis, genero, genDist, lidFem, lidMasc, lidEmp, salEmp, brechaNivel, brechaEmpresa, salGlobal, nac, anillosGenero, extPorNac, discapacidad, antiguedadRangos, antiguedadPorTipo };
 }
 
 function barColors(n: number) {
@@ -258,7 +280,7 @@ export default function NominaPage() {
 
   const rawRows: Row[]  = (data.tabla as Row[]) ?? [];
   const filteredRows    = applyFilters(rawRows, selected);
-  const { kpis, genero, genDist, lidFem, lidMasc, lidEmp, salEmp, brechaNivel, nac, anillosGenero, extPorNac, discapacidad, antiguedadRangos, antiguedadPorTipo } =
+  const { kpis, genero, genDist, lidFem, lidMasc, lidEmp, salEmp, brechaNivel, brechaEmpresa, salGlobal, nac, anillosGenero, extPorNac, discapacidad, antiguedadRangos, antiguedadPorTipo } =
     computeFromRows(filteredRows);
 
   // ── Comparación ───────────────────────────────────────────────────────────
@@ -487,22 +509,16 @@ export default function NominaPage() {
               </div>
             </div>
           </ChartCard>
-        </div>
-      )}
-
-      {/* Tab: Brecha */}
-      {tab === "brecha" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {genDist.length > 0 && (
             <ChartCard title="Distribución por Generaciones">
               <PlotChart
                 light
-                data={[{ type: "bar", x: genDist.map((r) => r.Generacion), y: genDist.map((r) => r.Cantidad), marker: { color: barColors(genDist.length) } }]}
+                data={[{ type: "bar", x: genDist.map((r) => r.Generacion), y: genDist.map((r) => r.Cantidad), marker: { color: barColors(genDist.length) }, text: genDist.map((r) => String(r.Cantidad)), textposition: "outside" }]}
                 height={280}
               />
             </ChartCard>
           )}
-          <ChartCard title="Cantidad de Personas por Rango de Antigüedad">
+          <ChartCard title="Personas por Rango de Antigüedad">
             <PlotChart
               light
               data={[{
@@ -517,7 +533,7 @@ export default function NominaPage() {
             />
           </ChartCard>
           {antiguedadPorTipo.length > 0 && (
-            <ChartCard title="Promedio de Antigüedad en Años por Tipo">
+            <ChartCard title="Antigüedad Promedio por Tipo de Empresa">
               <PlotChart
                 light
                 data={[{
@@ -532,6 +548,148 @@ export default function NominaPage() {
               />
             </ChartCard>
           )}
+        </div>
+      )}
+
+      {/* Tab: Brecha Salarial */}
+      {tab === "brecha" && (
+        <div className="space-y-5">
+          {/* KPIs globales de brecha */}
+          {salGlobal.mujeres > 0 || salGlobal.hombres > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-xl p-4 text-center" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: "var(--text2)" }}>Salario Promedio Mujeres</p>
+                <p className="text-2xl font-bold" style={{ color: "#db2777" }}>
+                  ₲{(salGlobal.mujeres / 1_000_000).toFixed(1)}M
+                </p>
+              </div>
+              <div className="rounded-xl p-4 text-center" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: "var(--text2)" }}>Salario Promedio Hombres</p>
+                <p className="text-2xl font-bold" style={{ color: "#2563EB" }}>
+                  ₲{(salGlobal.hombres / 1_000_000).toFixed(1)}M
+                </p>
+              </div>
+              <div className="rounded-xl p-4 text-center" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: "var(--text2)" }}>Brecha Global H/M</p>
+                <p className="text-2xl font-bold" style={{ color: salGlobal.hombres > salGlobal.mujeres ? "#f59e0b" : "#059669" }}>
+                  {salGlobal.hombres > 0 ? `${((salGlobal.hombres - salGlobal.mujeres) / salGlobal.hombres * 100).toFixed(1)}%` : "—"}
+                </p>
+                <p className="text-xs mt-1" style={{ color: "var(--text3)" }}>
+                  {salGlobal.hombres >= salGlobal.mujeres ? "hombres cobran más" : "mujeres cobran más"}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Brecha por Nivel AIC */}
+            {brechaNivel.length > 0 && (
+              <ChartCard title="Salario Promedio H vs M por Nivel AIC" span2>
+                <PlotChart
+                  light
+                  data={[
+                    {
+                      name: "Hombres", type: "bar",
+                      x: brechaNivel.map((r) => r.nivel),
+                      y: brechaNivel.map((r) => r.prom_hombres),
+                      marker: { color: "#2563EB" },
+                      text: brechaNivel.map((r) => r.prom_hombres > 0 ? `₲${(r.prom_hombres / 1_000_000).toFixed(1)}M` : ""),
+                      textposition: "outside" as const,
+                    },
+                    {
+                      name: "Mujeres", type: "bar",
+                      x: brechaNivel.map((r) => r.nivel),
+                      y: brechaNivel.map((r) => r.prom_mujeres),
+                      marker: { color: "#db2777" },
+                      text: brechaNivel.map((r) => r.prom_mujeres > 0 ? `₲${(r.prom_mujeres / 1_000_000).toFixed(1)}M` : ""),
+                      textposition: "outside" as const,
+                    },
+                  ]}
+                  layout={{ barmode: "group", yaxis: { title: { text: "Salario Promedio (₲)" } }, margin: { t: 32, r: 16, b: 80, l: 80 }, showlegend: true }}
+                  height={320}
+                />
+              </ChartCard>
+            )}
+
+            {/* Brecha % por nivel — barras horizontales */}
+            {brechaNivel.length > 0 && (
+              <ChartCard title="Brecha Salarial % por Nivel AIC">
+                {(() => {
+                  const nivelConBrecha = brechaNivel
+                    .map((r) => ({
+                      nivel: r.nivel,
+                      brecha: r.prom_hombres > 0
+                        ? parseFloat(((r.prom_hombres - r.prom_mujeres) / r.prom_hombres * 100).toFixed(1))
+                        : 0,
+                    }))
+                    .filter((r) => r.brecha !== 0);
+                  return (
+                    <PlotChart
+                      light
+                      data={[{
+                        type: "bar", orientation: "h",
+                        y: nivelConBrecha.map((r) => r.nivel),
+                        x: nivelConBrecha.map((r) => r.brecha),
+                        marker: { color: nivelConBrecha.map((r) => r.brecha > 0 ? "#f59e0b" : "#059669") },
+                        text: nivelConBrecha.map((r) => `${r.brecha > 0 ? "+" : ""}${r.brecha}%`),
+                        textposition: "outside" as const,
+                      }]}
+                      layout={{ xaxis: { title: { text: "% diferencia H vs M (positivo = hombres cobran más)" }, ticksuffix: "%" }, margin: { t: 16, r: 80, b: 48, l: 100 } }}
+                      height={280}
+                    />
+                  );
+                })()}
+              </ChartCard>
+            )}
+
+            {/* Brecha por empresa — H vs M */}
+            {brechaEmpresa.length > 0 && (
+              <ChartCard title="Salario Promedio H vs M por Empresa" span2>
+                <PlotChart
+                  light
+                  data={[
+                    {
+                      name: "Hombres", type: "bar",
+                      x: brechaEmpresa.map((r) => r.empresa),
+                      y: brechaEmpresa.map((r) => r.prom_hombres),
+                      marker: { color: "#2563EB" },
+                      text: brechaEmpresa.map((r) => r.prom_hombres > 0 ? `₲${(r.prom_hombres / 1_000_000).toFixed(1)}M` : ""),
+                      textposition: "outside" as const,
+                    },
+                    {
+                      name: "Mujeres", type: "bar",
+                      x: brechaEmpresa.map((r) => r.empresa),
+                      y: brechaEmpresa.map((r) => r.prom_mujeres),
+                      marker: { color: "#db2777" },
+                      text: brechaEmpresa.map((r) => r.prom_mujeres > 0 ? `₲${(r.prom_mujeres / 1_000_000).toFixed(1)}M` : ""),
+                      textposition: "outside" as const,
+                    },
+                  ]}
+                  layout={{ barmode: "group", yaxis: { title: { text: "Salario Promedio (₲)" } }, margin: { t: 32, r: 16, b: 80, l: 80 }, showlegend: true }}
+                  height={320}
+                />
+              </ChartCard>
+            )}
+
+            {/* Salario promedio por empresa (total) */}
+            {salEmp.length > 0 && (
+              <ChartCard title="Salario Promedio por Empresa">
+                <PlotChart
+                  light
+                  data={[{
+                    type: "bar",
+                    x: salEmp.map((r) => r.empresa),
+                    y: salEmp.map((r) => r.promedio),
+                    marker: { color: barColors(salEmp.length) },
+                    text: salEmp.map((r) => `₲${(r.promedio / 1_000_000).toFixed(1)}M`),
+                    textposition: "outside" as const,
+                  }]}
+                  layout={{ yaxis: { title: { text: "Salario Promedio (₲)" } }, margin: { t: 32, r: 16, b: 80, l: 80 } }}
+                  height={280}
+                />
+              </ChartCard>
+            )}
+          </div>
         </div>
       )}
 
@@ -612,6 +770,64 @@ export default function NominaPage() {
                     text: anosDisponiblesNom.map((ano) => {
                       const d = compDataNom[ano];
                       return d ? `${Math.round((d.genero.values[0] ?? 0) / Math.max(d.kpis.total, 1) * 100)}%` : "";
+                    }),
+                    textposition: "outside" as const,
+                  }]}
+                  layout={{ yaxis: { ticksuffix: "%", range: [0, 100] }, margin: { t: 32, r: 16, b: 48, l: 60 } }}
+                  height={300}
+                />
+              </ChartCard>
+
+              {/* Salario promedio H vs M por año */}
+              <ChartCard title="Salario Promedio H vs M por Año" span2>
+                <PlotChart
+                  light
+                  data={[
+                    {
+                      name: "Hombres", type: "bar",
+                      x: anosDisponiblesNom,
+                      y: anosDisponiblesNom.map((ano) => compDataNom[ano]?.salGlobal?.hombres ?? 0),
+                      marker: { color: "#2563EB" },
+                      text: anosDisponiblesNom.map((ano) => {
+                        const v = compDataNom[ano]?.salGlobal?.hombres ?? 0;
+                        return v > 0 ? `₲${(v / 1_000_000).toFixed(1)}M` : "";
+                      }),
+                      textposition: "outside" as const,
+                    },
+                    {
+                      name: "Mujeres", type: "bar",
+                      x: anosDisponiblesNom,
+                      y: anosDisponiblesNom.map((ano) => compDataNom[ano]?.salGlobal?.mujeres ?? 0),
+                      marker: { color: "#db2777" },
+                      text: anosDisponiblesNom.map((ano) => {
+                        const v = compDataNom[ano]?.salGlobal?.mujeres ?? 0;
+                        return v > 0 ? `₲${(v / 1_000_000).toFixed(1)}M` : "";
+                      }),
+                      textposition: "outside" as const,
+                    },
+                  ]}
+                  layout={{ barmode: "group", yaxis: { title: { text: "Salario Promedio (₲)" } }, margin: { t: 32, r: 16, b: 48, l: 80 }, showlegend: true }}
+                  height={320}
+                />
+              </ChartCard>
+
+              {/* % Líderes por año */}
+              <ChartCard title="% Líderes por Año">
+                <PlotChart
+                  light
+                  data={[{
+                    type: "bar",
+                    x: anosDisponiblesNom,
+                    y: anosDisponiblesNom.map((ano) => {
+                      const d = compDataNom[ano];
+                      if (!d) return 0;
+                      return Math.round((d.lidFem + d.lidMasc) / Math.max(d.kpis.total, 1) * 100);
+                    }),
+                    marker: { color: anosDisponiblesNom.map((ano) => YEAR_COLORS_NOM[ano] ?? "#0d9488") },
+                    text: anosDisponiblesNom.map((ano) => {
+                      const d = compDataNom[ano];
+                      if (!d) return "";
+                      return `${Math.round((d.lidFem + d.lidMasc) / Math.max(d.kpis.total, 1) * 100)}%`;
                     }),
                     textposition: "outside" as const,
                   }]}
