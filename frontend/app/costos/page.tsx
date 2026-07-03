@@ -736,6 +736,106 @@ export default function CostosPage() {
                   />
                 </ChartCard>
               )}
+
+              {/* Sobrecosto por Nivel AIC — barras agrupadas */}
+              {(() => {
+                const niveles = Array.from(new Set(rawRows.map((r) => String(r.NIVEL_AIC ?? "")).filter(Boolean))).sort();
+                if (!niveles.length) return null;
+                const traces = anosDisponiblesCos.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: niveles,
+                  y: niveles.map((niv) => rawRows.filter((r) => String(r.ANO_SALIDA ?? "") === ano && String(r.NIVEL_AIC ?? "") === niv).reduce((s, r) => s + (Number(r.SOBRECOSTO) || 0), 0)),
+                  marker: { color: YEAR_COLORS_COS[ano] },
+                }));
+                return (
+                  <ChartCard title="Sobrecosto por Nivel AIC — Comparación Anual">
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { title: { text: "Nivel AIC" } }, yaxis: { title: { text: "Sobrecosto" } }, margin: { t: 8, r: 16, b: 48, l: 80 }, showlegend: true }}
+                      height={340}
+                    />
+                  </ChartCard>
+                );
+              })()}
+
+              {/* Tipo de Salida — barras agrupadas */}
+              {(() => {
+                const tipos = Array.from(new Set(rawRows.map((r) => String(r.TIPO_SALIDA ?? "")).filter(Boolean))).sort();
+                if (!tipos.length) return null;
+                const traces = anosDisponiblesCos.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: tipos,
+                  y: tipos.map((t) => rawRows.filter((r) => String(r.ANO_SALIDA ?? "") === ano && String(r.TIPO_SALIDA ?? "") === t).length),
+                  marker: { color: YEAR_COLORS_COS[ano] },
+                }));
+                return (
+                  <ChartCard title="Tipo de Salida por Año">
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { title: { text: "Tipo" } }, yaxis: { title: { text: "Liquidaciones" } }, margin: { t: 8, r: 16, b: 48, l: 60 }, showlegend: true }}
+                      height={320}
+                    />
+                  </ChartCard>
+                );
+              })()}
+
+              {/* Top 10 motivos de salida — barras agrupadas */}
+              {(() => {
+                const motivoTotal: Record<string, number> = {};
+                rawRows.forEach((r) => {
+                  const m = String(r.MOTIVO_SALIDA ?? "").trim();
+                  if (m && m !== "NAN") motivoTotal[m] = (motivoTotal[m] ?? 0) + 1;
+                });
+                const top10 = Object.entries(motivoTotal).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([m]) => m);
+                if (!top10.length) return null;
+                const traces = anosDisponiblesCos.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: top10,
+                  y: top10.map((m) => rawRows.filter((r) => String(r.ANO_SALIDA ?? "") === ano && String(r.MOTIVO_SALIDA ?? "").trim() === m).length),
+                  marker: { color: YEAR_COLORS_COS[ano] },
+                }));
+                return (
+                  <ChartCard title="Top 10 Motivos de Salida — Comparación Anual" fullWidth>
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { tickangle: -35 }, yaxis: { title: { text: "Liquidaciones" } }, margin: { t: 8, r: 16, b: 120, l: 60 }, showlegend: true }}
+                      height={420}
+                    />
+                  </ChartCard>
+                );
+              })()}
+
+              {/* Composición de costos por año — barras apiladas % */}
+              {(() => {
+                const conceptosActivos = CONCEPTOS.filter(([, field]) => rawRows.some((r) => Number(r[field]) > 0));
+                if (!conceptosActivos.length) return null;
+                const traces = conceptosActivos.map(([label, field], i) => ({
+                  type: "bar" as const,
+                  name: label,
+                  x: anosDisponiblesCos,
+                  y: anosDisponiblesCos.map((ano) => {
+                    const anoRows = rawRows.filter((r) => String(r.ANO_SALIDA ?? "") === ano);
+                    return anoRows.reduce((s, r) => s + (Number(r[field]) || 0), 0);
+                  }),
+                  marker: { color: CONCEPT_COLORS[i] },
+                }));
+                return (
+                  <ChartCard title="Composición de Costos por Año" fullWidth>
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "stack", xaxis: { title: { text: "Año" } }, yaxis: { title: { text: "Monto" } }, margin: { t: 8, r: 200, b: 48, l: 80 }, showlegend: true, legend: { x: 1.02, y: 1 } }}
+                      height={400}
+                    />
+                  </ChartCard>
+                );
+              })()}
             </>
           )}
         </div>
