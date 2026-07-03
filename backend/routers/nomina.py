@@ -15,7 +15,7 @@ import anthropic
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
@@ -176,7 +176,7 @@ def _safe_float(v) -> float | None:
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.post("")
-async def procesar_nomina(file: UploadFile = File(...)):
+async def procesar_nomina(file: UploadFile = File(...), ano: int = Form(date.today().year)):
     # ── Leer Excel ────────────────────────────────────────────────────────────
     try:
         contents = await validar_excel(file)
@@ -196,6 +196,9 @@ async def procesar_nomina(file: UploadFile = File(...)):
 
     if df.empty:
         raise HTTPException(status_code=422, detail="No se encontraron colaboradores activos.")
+
+    # ── Año de evaluación ─────────────────────────────────────────────────────
+    df["ANO_EVALUACION"] = ano
 
     # ── Inferir sexo con IA ───────────────────────────────────────────────────
     if "NOMBRE" in df.columns:
@@ -389,6 +392,7 @@ async def procesar_nomina(file: UploadFile = File(...)):
     # TABLA DETALLE
     # ══════════════════════════════════════════════════════════════════════════
     tabla_cols = [c for c in [
+        "ANO_EVALUACION",
         "EMPRESA", "TIPO_EMPRESA", "NOMBRE", "CEDULA", "CARGO", "AREA", "DEPARTAMENTO", "SECCION",
         "NIVEL_AIC", "LIDER", "SEXO", "GENERACION", "EDAD", "NACIONALIDAD",
         "DISCAPACIDAD", "SALARIO", "FECHA_INGRESO", "ANTIGUEDAD_ANOS", "SITUACION",

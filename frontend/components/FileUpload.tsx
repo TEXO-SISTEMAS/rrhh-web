@@ -16,6 +16,8 @@ interface FileUploadProps {
   accept?: string;
   /** Label shown inside the drop zone */
   label?: string;
+  /** Extra form fields appended to FormData before upload */
+  extraFields?: Record<string, string>;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -27,6 +29,7 @@ export default function FileUpload({
   onResult,
   accept = ".xlsx,.xls",
   label,
+  extraFields,
 }: FileUploadProps) {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,6 +43,7 @@ export default function FileUpload({
     setFileNames(Array.from(files).map((f) => f.name));
 
     const form = new FormData();
+    if (extraFields) Object.entries(extraFields).forEach(([k, v]) => form.append(k, v));
     Array.from(files).forEach((file) => form.append(fieldName, file));
 
     try {

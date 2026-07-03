@@ -14,6 +14,7 @@ import { Row, sumField, groupBy, applyFilters, FilterConfig } from "@/lib/filter
 type AnyObj = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 const FILTER_CONFIGS: FilterConfig[] = [
+  { label: "Año",        field: "ANO_EVALUACION" },
   { label: "Empresa",    field: "EMPRESA" },
   { label: "Nivel AIC",  field: "NIVEL_AIC" },
   { label: "Género",     field: "SEXO" },
@@ -22,11 +23,18 @@ const FILTER_CONFIGS: FilterConfig[] = [
 ];
 
 const TABS = [
-  { id: "distribucion", label: "Distribución", icon: "👥" },
-  { id: "demografia",   label: "Demografía",   icon: "🌍" },
-  { id: "brecha",       label: "Brecha",       icon: "📊" },
-  { id: "detalle",      label: "Detalle",      icon: "📋" },
+  { id: "distribucion",  label: "Distribución",  icon: "👥" },
+  { id: "demografia",    label: "Demografía",    icon: "🌍" },
+  { id: "brecha",        label: "Brecha",        icon: "📊" },
+  { id: "comparacion",   label: "Comparación",   icon: "⚖️" },
+  { id: "detalle",       label: "Detalle",       icon: "📋" },
 ];
+
+function defaultLatestYear(rows: Row[]): Record<string, string[]> {
+  const years = Array.from(new Set(rows.map((r) => String(r.ANO_EVALUACION ?? "")).filter(Boolean))).sort();
+  const latest = years[years.length - 1];
+  return latest ? { ANO_EVALUACION: [latest] } : {};
+}
 
 function fmt(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -179,13 +187,15 @@ export default function NominaPage() {
   const [data, setData] = useState<AnyObj | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [tab, setTab] = useState("distribucion");
+  const [anoUpload, setAnoUpload] = useState(String(new Date().getFullYear()));
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (nominaData && !data) {
       setData(nominaData);
-      register(FILTER_CONFIGS, (nominaData.tabla as Row[]) ?? []);
+      const rows = (nominaData.tabla as Row[]) ?? [];
+      register(FILTER_CONFIGS, rows, defaultLatestYear(rows));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nominaData]);
@@ -205,10 +215,18 @@ export default function NominaPage() {
   }
 
   function handleResult(result: AnyObj) {
-    setData(result);
-    setNominaData(result);
+    const newRows = (result.tabla as Row[]) ?? [];
+    const newYears = new Set(newRows.map((r) => String(r.ANO_EVALUACION ?? "")));
+    const existingRows = (data?.tabla as Row[]) ?? [];
+    const mergedRows = [
+      ...existingRows.filter((r) => !newYears.has(String(r.ANO_EVALUACION ?? ""))),
+      ...newRows,
+    ];
+    const merged = { ...result, tabla: mergedRows };
+    setData(merged);
+    setNominaData(merged);
     setShowUpload(false);
-    register(FILTER_CONFIGS, (result.tabla as Row[]) ?? []);
+    register(FILTER_CONFIGS, mergedRows, defaultLatestYear(mergedRows));
   }
 
   if (!data) {
@@ -221,8 +239,18 @@ export default function NominaPage() {
             Subí el Excel de nómina para analizar headcount, géneros, generaciones y brecha salarial por empresa.
           </p>
         </div>
-        <div className="w-full max-w-md">
-          <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult} />
+        <div className="w-full max-w-md space-y-3">
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium whitespace-nowrap" style={{ color: "var(--text2)" }}>Año de evaluación</label>
+            <input
+              type="number"
+              value={anoUpload}
+              onChange={(e) => setAnoUpload(e.target.value)}
+              className="w-28 rounded-lg px-3 py-2 text-sm text-center"
+              style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text)" }}
+            />
+          </div>
+          <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult} extraFields={{ ano: anoUpload }} />
         </div>
       </div>
     );
@@ -232,6 +260,17 @@ export default function NominaPage() {
   const filteredRows    = applyFilters(rawRows, selected);
   const { kpis, genero, genDist, lidFem, lidMasc, lidEmp, salEmp, brechaNivel, nac, anillosGenero, extPorNac, discapacidad, antiguedadRangos, antiguedadPorTipo } =
     computeFromRows(filteredRows);
+
+  // ── Comparación ───────────────────────────────────────────────────────────
+  const anosDisponiblesNom = Array.from(new Set(rawRows.map((r) => String(r.ANO_EVALUACION ?? "")).filter(Boolean))).sort();
+  const compDataNom = Object.fromEntries(
+    anosDisponiblesNom.map((ano) => [ano, computeFromRows(rawRows.filter((r) => String(r.ANO_EVALUACION ?? "") === ano))])
+  );
+  const YEAR_COLORS_NOM: Record<string, string> = {
+    [anosDisponiblesNom[0]]: "#0d9488",
+    [anosDisponiblesNom[1]]: "#6366f1",
+    [anosDisponiblesNom[2]]: "#f59e0b",
+  };
 
   return (
     <div>
@@ -257,7 +296,17 @@ export default function NominaPage() {
             <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>Actualizar datos de nómina</span>
             <button onClick={() => setShowUpload(false)} className="text-xs px-3 py-1 rounded-lg" style={{ background: "var(--card2)", color: "var(--text2)" }}>Cancelar</button>
           </div>
-          <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult} />
+          <div className="flex items-center gap-3 mb-3">
+            <label className="text-sm font-medium whitespace-nowrap" style={{ color: "var(--text2)" }}>Año de evaluación</label>
+            <input
+              type="number"
+              value={anoUpload}
+              onChange={(e) => setAnoUpload(e.target.value)}
+              className="w-28 rounded-lg px-3 py-2 text-sm text-center"
+              style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text)" }}
+            />
+          </div>
+          <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult} extraFields={{ ano: anoUpload }} />
         </div>
       )}
 
@@ -482,6 +531,95 @@ export default function NominaPage() {
                 height={280}
               />
             </ChartCard>
+          )}
+        </div>
+      )}
+
+      {/* Tab: Comparación */}
+      {tab === "comparacion" && (
+        <div className="space-y-5">
+          {anosDisponiblesNom.length < 2 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <p className="text-4xl">📂</p>
+              <p className="text-sm" style={{ color: "var(--text2)" }}>
+                Subí nóminas de al menos dos años para comparar.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* KPI cards por año */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {anosDisponiblesNom.map((ano) => {
+                  const d = compDataNom[ano];
+                  return (
+                    <div key={ano} className="rounded-xl p-4 space-y-2" style={{ background: "var(--card)", border: `1px solid ${YEAR_COLORS_NOM[ano] ?? "var(--border)"}` }}>
+                      <p className="text-xs font-semibold" style={{ color: YEAR_COLORS_NOM[ano] ?? "var(--text2)" }}>{ano}</p>
+                      <p className="text-lg font-bold" style={{ color: "var(--text)" }}>{d?.kpis.total ?? 0}</p>
+                      <p className="text-xs" style={{ color: "var(--text2)" }}>Colaboradores</p>
+                      <div className="flex gap-4 pt-1">
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                            {d ? `${Math.round((d.genero.values[0] ?? 0) / Math.max(d.kpis.total, 1) * 100)}%` : "—"}
+                          </p>
+                          <p className="text-xs" style={{ color: "var(--text3)" }}>Mujeres</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                            {d?.kpis.empresas ?? 0}
+                          </p>
+                          <p className="text-xs" style={{ color: "var(--text3)" }}>Empresas</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Headcount por empresa — barras agrupadas */}
+              {(() => {
+                const empresas = Array.from(new Set(rawRows.map((r) => String(r.EMPRESA ?? "")).filter(Boolean))).sort();
+                const traces = anosDisponiblesNom.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: empresas,
+                  y: empresas.map((emp) => rawRows.filter((r) => String(r.ANO_EVALUACION ?? "") === ano && String(r.EMPRESA ?? "") === emp).length),
+                  marker: { color: YEAR_COLORS_NOM[ano] },
+                }));
+                return empresas.length > 0 ? (
+                  <ChartCard title="Headcount por Empresa — Comparación Anual" span2>
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { title: { text: "Empresa" } }, yaxis: { title: { text: "Colaboradores" } }, margin: { t: 8, r: 16, b: 80, l: 60 }, showlegend: true }}
+                      height={360}
+                    />
+                  </ChartCard>
+                ) : null;
+              })()}
+
+              {/* % Mujeres por año — barras simples */}
+              <ChartCard title="% Mujeres por Año">
+                <PlotChart
+                  light
+                  data={[{
+                    type: "bar",
+                    x: anosDisponiblesNom,
+                    y: anosDisponiblesNom.map((ano) => {
+                      const d = compDataNom[ano];
+                      return d ? Math.round((d.genero.values[0] ?? 0) / Math.max(d.kpis.total, 1) * 100) : 0;
+                    }),
+                    marker: { color: anosDisponiblesNom.map((ano) => YEAR_COLORS_NOM[ano] ?? "#0d9488") },
+                    text: anosDisponiblesNom.map((ano) => {
+                      const d = compDataNom[ano];
+                      return d ? `${Math.round((d.genero.values[0] ?? 0) / Math.max(d.kpis.total, 1) * 100)}%` : "";
+                    }),
+                    textposition: "outside" as const,
+                  }]}
+                  layout={{ yaxis: { ticksuffix: "%", range: [0, 100] }, margin: { t: 32, r: 16, b: 48, l: 60 } }}
+                  height={300}
+                />
+              </ChartCard>
+            </>
           )}
         </div>
       )}
