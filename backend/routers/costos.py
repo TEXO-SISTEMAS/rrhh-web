@@ -82,6 +82,14 @@ def normalizar_costos(df_raw: pd.DataFrame) -> pd.DataFrame:
         df["ANO_SALIDA"]   = df["FECHA_SALIDA"].dt.year.astype("Int64")
         df["MES_SALIDA_N"] = df["FECHA_SALIDA"].dt.month.astype("Int64")
 
+    # Calcular SOBRECOSTO si no viene en el Excel o está todo en cero
+    componentes_sob = ["INDEMNIZACION", "PREAVISO", "VAC_PROPORCIONALES",
+                       "AGUINALDO", "GRATIFICACION", "IPS_SOBRECOSTO", "AP_SOBRECOSTO"]
+    if "SOBRECOSTO" not in df.columns or df.get("SOBRECOSTO", pd.Series([0])).sum() == 0:
+        cols_disp = [c for c in componentes_sob if c in df.columns]
+        if cols_disp:
+            df["SOBRECOSTO"] = df[cols_disp].sum(axis=1)
+
     return df
 
 
