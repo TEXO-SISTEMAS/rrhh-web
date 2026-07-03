@@ -216,6 +216,7 @@ export default function CostosPage() {
   const [dragging, setDragging]       = useState(false);
   const [activeTab, setActiveTab]     = useState("agencia");
   const [showUpload, setShowUpload]   = useState(false);
+  const [anoUpload, setAnoUpload]     = useState("2025");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -235,6 +236,7 @@ export default function CostosPage() {
     const form = new FormData();
     files.forEach((f) => form.append("files", f));
     if (hoja) form.append("hoja", hoja);
+    form.append("ano", anoUpload || String(new Date().getFullYear()));
     try {
       const res = await fetch(`${API_URL}/api/costos`, {
         method: "POST",
@@ -398,6 +400,19 @@ export default function CostosPage() {
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium" style={{ color: "var(--text)" }}>Cargar nuevos datos de costos</p>
             <button onClick={() => { setShowUpload(false); setError(null); }} className="text-xs transition" style={{ color: "var(--text3)" }}>Cancelar</button>
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs font-medium mb-1" style={{ color: "var(--text2)" }}>
+              Año del archivo <span style={{ color: "#f43f5e" }}>*</span>
+            </label>
+            <input
+              type="number"
+              value={anoUpload}
+              onChange={(e) => setAnoUpload(e.target.value)}
+              placeholder="2025"
+              className="w-48 rounded-lg px-3 py-2 text-sm"
+              style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text)" }}
+            />
           </div>
           <div
             onClick={() => inputRef.current?.click()}

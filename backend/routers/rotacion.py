@@ -17,7 +17,7 @@ import anthropic
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
@@ -158,7 +158,10 @@ def _safe_float(v) -> float | None:
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.post("")
-async def procesar_rotacion(files: List[UploadFile] = File(...)):
+async def procesar_rotacion(
+    files: List[UploadFile] = File(...),
+    ano: int = Form(...),
+):
 
     # ── Leer y normalizar todas las hojas de todos los archivos ───────────────
     # Concatenamos de forma incremental para no acumular todos los DFs en memoria
@@ -173,11 +176,6 @@ async def procesar_rotacion(files: List[UploadFile] = File(...)):
             raise
         except Exception:
             raise HTTPException(status_code=400, detail=f"No se pudo leer '{f.filename}'. Verificá que sea un Excel válido.")
-
-        # Año desde nombre de archivo — usa el último año encontrado
-        # (ej: "ROTACION 2024-2025.xlsx" → 2025, no 2024)
-        ano_matches = re.findall(r'20\d{2}', f.filename or "")
-        ano = int(ano_matches[-1]) if ano_matches else date.today().year
 
         hojas_validas = [
             h for h in xl.sheet_names

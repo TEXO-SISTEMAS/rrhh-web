@@ -128,6 +128,7 @@ def _sum(df: pd.DataFrame, col: str) -> float:
 async def procesar_costos(
     files: List[UploadFile] = File(...),
     hoja: Optional[str] = Form(None),
+    ano: int = Form(...),
 ):
     # ── Leer y concatenar archivos ────────────────────────────────────────────
     dfs: list[pd.DataFrame] = []
@@ -173,6 +174,12 @@ async def procesar_costos(
 
     if df.empty:
         raise HTTPException(status_code=422, detail="El archivo no contiene datos.")
+
+    # Aplicar año del formulario como fallback cuando FECHA_SALIDA no pudo parsearse
+    if "ANO_SALIDA" not in df.columns:
+        df["ANO_SALIDA"] = ano
+    else:
+        df["ANO_SALIDA"] = df["ANO_SALIDA"].fillna(ano)
 
     # Eliminar filas de totales y filas vacías (AGENCIA null o vacío)
     if "AGENCIA" in df.columns:

@@ -12,7 +12,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
@@ -142,7 +142,10 @@ def _mean_col(df: pd.DataFrame, col: str) -> float | None:
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.post("")
-async def procesar_reclutamiento(files: List[UploadFile] = File(...)):
+async def procesar_reclutamiento(
+    files: List[UploadFile] = File(...),
+    ano: int = Form(...),
+):
 
     # ── Leer y concatenar todos los archivos ──────────────────────────────────
     dfs: list[pd.DataFrame] = []
@@ -176,6 +179,12 @@ async def procesar_reclutamiento(files: List[UploadFile] = File(...)):
 
     if df.empty:
         raise HTTPException(status_code=422, detail="El archivo no contiene datos.")
+
+    # Aplicar año del formulario como fallback cuando RECEPCION no pudo parsearse
+    if "ANO" not in df.columns:
+        df["ANO"] = ano
+    else:
+        df["ANO"] = df["ANO"].fillna(ano)
 
     total = len(df)
 
