@@ -543,6 +543,83 @@ export default function ReclutamientoPage() {
                 );
               })()}
 
+              {/* Top 10 puestos — barras agrupadas */}
+              {(() => {
+                const posMap: Record<string, Record<string, number>> = {};
+                rawRows.forEach((r) => {
+                  const ano = String(r.ANO ?? "");
+                  const pos = String(r.POSICION ?? "").trim();
+                  if (!ano || !pos || pos === "NAN") return;
+                  posMap[pos] = posMap[pos] ?? {};
+                  posMap[pos][ano] = (posMap[pos][ano] ?? 0) + 1;
+                });
+                const totalPorPos = Object.entries(posMap)
+                  .map(([pos, anoCount]) => ({ pos, total: Object.values(anoCount).reduce((s, v) => s + v, 0) }))
+                  .sort((a, b) => b.total - a.total)
+                  .slice(0, 10)
+                  .map((r) => r.pos);
+                if (!totalPorPos.length) return null;
+                const traces = anosDisponiblesRec.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: totalPorPos,
+                  y: totalPorPos.map((pos) => posMap[pos]?.[ano] ?? 0),
+                  marker: { color: YEAR_COLORS_REC[ano] },
+                }));
+                return (
+                  <ChartCard title="Top 10 Puestos más Solicitados — Comparación Anual">
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { tickangle: -35 }, yaxis: { title: { text: "Búsquedas" } }, margin: { t: 8, r: 16, b: 110, l: 60 }, showlegend: true }}
+                      height={400}
+                    />
+                  </ChartCard>
+                );
+              })()}
+
+              {/* Tasa de éxito por responsable — barras agrupadas */}
+              {(() => {
+                const respMap: Record<string, Record<string, { total: number; cerradas: number }>> = {};
+                rawRows.forEach((r) => {
+                  const ano = String(r.ANO ?? "");
+                  const resp = String(r.RESPONSABLE ?? "").trim();
+                  if (!ano || !resp || resp === "NAN") return;
+                  respMap[resp] = respMap[resp] ?? {};
+                  respMap[resp][ano] = respMap[resp][ano] ?? { total: 0, cerradas: 0 };
+                  respMap[resp][ano].total++;
+                  const cerrada = String(r.SITUACION ?? "").toUpperCase().includes("CERR") || String(r.STATUS ?? "").toUpperCase().includes("CERR");
+                  if (cerrada) respMap[resp][ano].cerradas++;
+                });
+                const responsables = Object.entries(respMap)
+                  .filter(([, anoData]) => Object.values(anoData).some((d) => d.total >= 2))
+                  .map(([resp, anoData]) => ({ resp, total: Object.values(anoData).reduce((s, d) => s + d.total, 0) }))
+                  .sort((a, b) => b.total - a.total)
+                  .slice(0, 10)
+                  .map((r) => r.resp);
+                if (!responsables.length) return null;
+                const traces = anosDisponiblesRec.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: responsables,
+                  y: responsables.map((resp) => {
+                    const d = respMap[resp]?.[ano];
+                    return d && d.total >= 1 ? Math.round(d.cerradas / d.total * 1000) / 10 : 0;
+                  }),
+                  marker: { color: YEAR_COLORS_REC[ano] },
+                }));
+                return (
+                  <ChartCard title="Tasa de Éxito por Responsable — Comparación Anual">
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", xaxis: { tickangle: -35 }, yaxis: { title: { text: "%" }, ticksuffix: "%", range: [0, 115] }, margin: { t: 8, r: 16, b: 110, l: 60 }, showlegend: true }}
+                      height={400}
+                    />
+                  </ChartCard>
+                );
+              })()}
+
               {/* Canal de ingreso por año — donuts lado a lado */}
               {(() => {
                 const allCanales = Array.from(new Set(rawRows.map((r) => String(r.TIPO_INGRESO ?? "")).filter(Boolean)));
