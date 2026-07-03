@@ -654,7 +654,7 @@ export default function RotacionPage() {
   const salEmpCompTraces = anosDisponibles.map((ano) => ({
     type: "bar" as const, name: ano,
     x: empresasComp,
-    y: empresasComp.map((emp) => compData[ano]?.salEmp.find((r: AnyObj) => r.empresa === emp)?.salidas ?? 0),
+    y: empresasComp.map((emp) => compData[ano]?.salEmp.find((r: AnyObj) => (r.EMPRESA ?? r.empresa) === emp)?.salidas ?? 0),
     marker: { color: YEAR_COLORS[ano] ?? C_GRAY },
   }));
   const tasaEmpCompTraces = anosDisponibles.map((ano) => ({
