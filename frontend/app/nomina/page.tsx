@@ -447,6 +447,54 @@ export default function NominaPage() {
                 />
               </ChartCard>
             )}
+            {/* Headcount por Empresa */}
+            {(() => {
+              const empMap = groupBy(filteredRows, "EMPRESA");
+              const empData = Object.entries(empMap)
+                .map(([emp, r]) => ({ empresa: emp, count: r.length }))
+                .sort((a, b) => b.count - a.count);
+              return empData.length > 0 ? (
+                <ChartCard title="Headcount por Empresa">
+                  <PlotChart
+                    light
+                    data={[{
+                      type: "bar",
+                      x: empData.map((r) => r.empresa),
+                      y: empData.map((r) => r.count),
+                      marker: { color: barColors(empData.length) },
+                      text: empData.map((r) => String(r.count)),
+                      textposition: "outside",
+                    }]}
+                    layout={{ yaxis: { title: { text: "Colaboradores" } }, margin: { t: 32, r: 16, b: 80, l: 60 } }}
+                    height={280}
+                  />
+                </ChartCard>
+              ) : null;
+            })()}
+            {/* Headcount por Nivel AIC */}
+            {(() => {
+              const NIVEL_ORDER = ["JUNIOR", "INTERMEDIO", "SENIOR", "GERENCIA", "DIRECTIVO"];
+              const nivMap = groupBy(filteredRows.filter((r) => r.NIVEL_AIC), "NIVEL_AIC");
+              const nivData = NIVEL_ORDER.filter((n) => nivMap[n])
+                .map((n) => ({ nivel: n, count: nivMap[n].length }));
+              return nivData.length > 0 ? (
+                <ChartCard title="Headcount por Nivel AIC">
+                  <PlotChart
+                    light
+                    data={[{
+                      type: "bar",
+                      x: nivData.map((r) => r.nivel),
+                      y: nivData.map((r) => r.count),
+                      marker: { color: barColors(nivData.length) },
+                      text: nivData.map((r) => String(r.count)),
+                      textposition: "outside",
+                    }]}
+                    layout={{ yaxis: { title: { text: "Colaboradores" } }, margin: { t: 32, r: 16, b: 60, l: 60 } }}
+                    height={280}
+                  />
+                </ChartCard>
+              ) : null;
+            })()}
           </div>
         </div>
       )}

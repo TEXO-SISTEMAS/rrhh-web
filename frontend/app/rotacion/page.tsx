@@ -1356,6 +1356,36 @@ export default function RotacionPage() {
                   );
                 })}
               </div>
+
+              {/* Permanencia promedio por empresa — barras agrupadas */}
+              {(() => {
+                const allEmps = Array.from(new Set(empresasComp)).sort();
+                const traces = anosDisponibles.map((ano) => ({
+                  type: "bar" as const,
+                  name: ano,
+                  x: allEmps,
+                  y: allEmps.map((emp) => {
+                    const found = (compData[ano]?.permEmp as AnyObj[] | undefined)?.find((r: AnyObj) => r.empresa === emp);
+                    return found ? (found as AnyObj).meses ?? 0 : 0;
+                  }),
+                  marker: { color: YEAR_COLORS[ano] ?? C_GRAY },
+                  text: allEmps.map((emp) => {
+                    const found = (compData[ano]?.permEmp as AnyObj[] | undefined)?.find((r: AnyObj) => r.empresa === emp);
+                    return found ? `${(found as AnyObj).meses}m` : "";
+                  }),
+                  textposition: "outside" as const,
+                }));
+                return allEmps.length > 0 ? (
+                  <ChartCard title="Permanencia Promedio por Empresa (meses)">
+                    <PlotChart
+                      light
+                      data={traces}
+                      layout={{ barmode: "group", yaxis: { title: { text: "Meses" }, ticksuffix: "m" }, margin: { t: 32, r: 16, b: 80, l: 60 }, showlegend: true }}
+                      height={340}
+                    />
+                  </ChartCard>
+                ) : null;
+              })()}
             </>
           )}
         </div>

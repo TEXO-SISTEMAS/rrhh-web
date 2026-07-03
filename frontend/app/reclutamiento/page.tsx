@@ -122,7 +122,15 @@ function computeFromRows(rows: Row[]) {
     .filter((r) => r.dias_promedio > 0)
     .sort((a, b) => a.ANO.localeCompare(b.ANO));
 
-  return { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno };
+  const tipoVacMap = groupBy(rows.filter((r) => r.TIPO_VACANTE), "TIPO_VACANTE");
+  const diasTipo = Object.entries(tipoVacMap)
+    .map(([tipo, r]) => {
+      const dr = r.filter((x) => x.DIAS_CIERRE != null && Number(x.DIAS_CIERRE) > 0);
+      return { tipo: String(tipo), busquedas: r.length, dias_promedio: dr.length ? Math.round(sumField(dr, "DIAS_CIERRE") / dr.length) : 0 };
+    })
+    .sort((a, b) => b.dias_promedio - a.dias_promedio);
+
+  return { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno, diasTipo };
 }
 
 function barColors(n: number) {
@@ -200,7 +208,7 @@ export default function ReclutamientoPage() {
 
   const rawRows: Row[]  = (data.tabla as Row[]) ?? [];
   const filteredRows    = applyFilters(rawRows, selected);
-  const { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno } =
+  const { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno, diasTipo } =
     computeFromRows(filteredRows);
 
   // ── Comparación ───────────────────────────────────────────────────────────
@@ -380,6 +388,23 @@ export default function ReclutamientoPage() {
           {lineTraces.length > 0 && (
             <ChartCard title="Tendencia de Búsquedas Mensual">
               <PlotChart light data={lineTraces} height={300} />
+            </ChartCard>
+          )}
+          {diasTipo.length > 0 && (
+            <ChartCard title="Días Promedio por Tipo de Vacante">
+              <PlotChart
+                light
+                data={[{
+                  type: "bar",
+                  x: diasTipo.map((r) => r.tipo),
+                  y: diasTipo.map((r) => r.dias_promedio),
+                  marker: { color: barColors(diasTipo.length) },
+                  text: diasTipo.map((r) => `${r.dias_promedio}d`),
+                  textposition: "outside",
+                }]}
+                layout={{ yaxis: { title: { text: "Días" }, ticksuffix: "d" }, margin: { t: 32, r: 16, b: 80, l: 60 } }}
+                height={300}
+              />
             </ChartCard>
           )}
         </div>
