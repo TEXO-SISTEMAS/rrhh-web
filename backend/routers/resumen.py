@@ -75,8 +75,9 @@ Sin markdown, sin bullets, solo texto ejecutivo."""
             messages=[{"role": "user", "content": prompt}]
         )
         return r.content[0].text.strip()
-    except Exception:
-        return ""
+    except Exception as e:
+        print(f"[resumen] insight_empresa_ia ERROR para {empresa}: {e}")
+        return f"[Error IA: {type(e).__name__}]"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
