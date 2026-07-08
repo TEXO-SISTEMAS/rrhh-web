@@ -37,7 +37,7 @@ function getAvailableYears(
     ...extractYears((rotacion?.raw_rows  as AnyObj[]) ?? [], "ANO_REPORTE"),
     ...extractYears((costos?.raw_rows    as AnyObj[]) ?? [], "ANO_SALIDA"),
   ];
-  return [...new Set(all)].sort((a, b) => a - b);
+  return Array.from(new Set(all)).sort((a, b) => a - b);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
