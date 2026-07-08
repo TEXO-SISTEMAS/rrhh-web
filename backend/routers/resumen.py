@@ -58,6 +58,32 @@ Respondé ÚNICAMENTE con un JSON válido. Clave = nombre original, valor = nomb
         return {n: n for n in nombres}
 
 
+def insight_holding_ia(kpis: dict, empresas: list[str]) -> str:
+    kpis_txt = json.dumps(kpis, ensure_ascii=False, indent=2)
+    emp_txt  = ", ".join(empresas)
+    prompt = f"""Sos un consultor senior de RRHH analizando el holding Texo (grupo de empresas publicitarias en Paraguay).
+Estas son las empresas del holding: {emp_txt}
+
+KPIs consolidados del holding:
+{kpis_txt}
+
+Redactá un análisis ejecutivo del holding en máximo 4 oraciones directas y ejecutivas. Incluí:
+- Situación general de la fuerza laboral
+- Principal riesgo identificado (rotación, costos, u otro)
+- Una acción prioritaria concreta para la dirección
+
+Sin markdown, sin bullets, solo texto ejecutivo en español."""
+    try:
+        r = client.messages.create(
+            model="claude-haiku-4-5-20251001", max_tokens=300,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return r.content[0].text.strip()
+    except Exception as e:
+        print(f"[resumen] insight_holding_ia ERROR: {e}")
+        return f"[Error IA: {type(e).__name__}]"
+
+
 def insight_empresa_ia(data_json: str, empresa: str) -> str:
     prompt = f"""Sos un consultor de RRHH analizando datos del holding Texo (empresas publicitarias en Paraguay).
 Estos son los indicadores clave de la empresa {empresa}:
@@ -262,9 +288,13 @@ async def procesar_resumen(payload: ResumenRequest):
         kpis_consolidados["costo_total"]      = payload.liquidaciones.get("kpis", {}).get("total_costo")
         kpis_consolidados["liquidaciones"]    = payload.liquidaciones.get("kpis", {}).get("total_liquidaciones")
 
+    # ── Narrativa holding (análisis global) ───────────────────────────────────
+    narrativa_holding = insight_holding_ia(kpis_consolidados, empresas_disp)
+
     # ── Respuesta ─────────────────────────────────────────────────────────────
     result = {
         "narrativas":        narrativas,
+        "narrativa_holding": narrativa_holding,
         "kpis_consolidados": kpis_consolidados,
         "metricas_empresa":  metricas_emp,
         "empresas":          empresas_disp,

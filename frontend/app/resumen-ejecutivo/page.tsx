@@ -381,12 +381,14 @@ function GraficosHolding({
   costosData,
   reclutamientoData,
   selectedYear,
+  narrativaHolding,
 }: {
   nominaData: AnyObj | null;
   rotacionData: AnyObj | null;
   costosData: AnyObj | null;
   reclutamientoData: AnyObj | null;
   selectedYear: number | "todos";
+  narrativaHolding?: string;
 }) {
   // ── Rotación: rows filtrados por año ──────────────────────────────────────
   const rotRaw  = (rotacionData?.raw_rows as AnyObj[]) ?? [];
@@ -487,6 +489,18 @@ function GraficosHolding({
         </span>
         <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
       </div>
+
+      {/* ── Análisis ejecutivo global ────────────────────────────────────── */}
+      {narrativaHolding && (
+        <div className="rounded-xl p-5 mb-2"
+          style={{ border: "1px solid rgba(124,90,246,0.25)", background: "rgba(124,90,246,0.06)" }}>
+          <p className="label-xs mb-2 flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
+            Análisis Ejecutivo del Holding
+          </p>
+          <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.7 }}>{narrativaHolding}</p>
+        </div>
+      )}
 
       {/* ── Nómina ───────────────────────────────────────────────────────── */}
       {hasNomina && (
@@ -947,7 +961,8 @@ export default function ResumenEjecutivoPage() {
   }
 
   // ── Result display ────────────────────────────────────────────────────────
-  const narrativas:   Record<string, string> = (result?.narrativas        as Record<string, string>) ?? {};
+  const narrativas:      Record<string, string> = (result?.narrativas        as Record<string, string>) ?? {};
+  const narrativaHolding: string               = (result?.narrativa_holding as string) ?? "";
   const metricasEmp:  Record<string, AnyObj> = (result?.metricas_empresa  as Record<string, AnyObj>) ?? {};
   const kpisConsol:   AnyObj                 = (result?.kpis_consolidados as AnyObj) ?? {};
   const empresas:     string[]               = (result?.empresas          as string[]) ?? [];
@@ -1108,6 +1123,7 @@ export default function ResumenEjecutivoPage() {
             costosData={costosData}
             reclutamientoData={reclutamientoData}
             selectedYear={selectedYear}
+            narrativaHolding={narrativaHolding}
           />
         </>
       )}
