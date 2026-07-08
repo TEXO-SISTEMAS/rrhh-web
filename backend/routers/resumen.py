@@ -49,7 +49,7 @@ NOMBRES A MAPEAR:
 Respondé ÚNICAMENTE con un JSON válido. Clave = nombre original, valor = nombre canónico."""
     try:
         r = client.messages.create(
-            model="claude-sonnet-4-20250514", max_tokens=500,
+            model="claude-sonnet-5", max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         )
         texto = re.sub(r"```json|```", "", r.content[0].text.strip()).strip()
@@ -71,7 +71,7 @@ En máximo 3 oraciones directas y ejecutivas, describí:
 Sin markdown, sin bullets, solo texto ejecutivo."""
     try:
         r = client.messages.create(
-            model="claude-sonnet-4-20250514", max_tokens=200,
+            model="claude-sonnet-5", max_tokens=200,
             messages=[{"role": "user", "content": prompt}]
         )
         return r.content[0].text.strip()
