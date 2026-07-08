@@ -232,7 +232,7 @@ function ComparisonTab({
     { label: "Liquidaciones",          a: kA.liquidaciones, b: kB.liquidaciones, fmt: (v: number|null) => fN(v),              low: true },
   ];
 
-  const empresas = [...new Set([...Object.keys(kA.hc_emp), ...Object.keys(kB.hc_emp)])].sort();
+  const empresas = Array.from(new Set(Object.keys(kA.hc_emp).concat(Object.keys(kB.hc_emp)))).sort();
 
   return (
     <div className="space-y-6">
