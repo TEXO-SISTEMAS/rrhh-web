@@ -113,7 +113,7 @@ Datos del módulo {modulo.upper()}:
 Sin markdown, sin bullets, solo texto ejecutivo en español."""
     try:
         r = client.messages.create(
-            model="claude-haiku-4-5-20251001", max_tokens=200,
+            model="claude-haiku-4-5-20251001", max_tokens=400,
             messages=[{"role": "user", "content": prompt}]
         )
         return r.content[0].text.strip()
