@@ -65,20 +65,17 @@ function computeKpisForYear(
   costos: AnyObj | null,
   year: number,
 ): YearKpis {
-  // nomina → tabla (all rows are already activos), year = ANO_EVALUACION
-  const nomRows = ((nomina?.tabla      as AnyObj[]) ?? []).filter(r => Number(r.ANO_EVALUACION) === year);
-  // rotacion → raw_rows, year = ANO_REPORTE; filter SITUACION=I for salidas
-  const rotAll  = ((rotacion?.raw_rows as AnyObj[]) ?? []).filter(r => Number(r.ANO_REPORTE)    === year);
+  // Nomina es single-year → usar KPIs pre-computados directamente (no filtrar por año)
+  const nomKpis   = (nomina?.kpis  as AnyObj) ?? {};
+  const total     = Number(nomKpis.total ?? 0);
+  const hcEmp     = (nomKpis.por_empresa as Record<string, number>) ?? {};
+
+  // Rotacion → raw_rows filtrados por ANO_REPORTE + SITUACION=I (salidas)
+  const rotAll  = ((rotacion?.raw_rows as AnyObj[]) ?? []).filter(r => Number(r.ANO_REPORTE) === year);
   const rotRows = rotAll.filter(r => String(r.SITUACION).toUpperCase() === "I");
-  // costos → raw_rows, year = ANO_SALIDA, company = AGENCIA
-  const cosRows = ((costos?.raw_rows   as AnyObj[]) ?? []).filter(r => Number(r.ANO_SALIDA)     === year);
 
-  const total   = nomRows.length;
-  const mujeres = nomRows.filter(r => r.SEXO === "F").length;
-  const lideres = nomRows.filter(r => String(r.LIDER).toUpperCase() === "SI").length;
-
-  const hcEmp: Record<string, number> = {};
-  nomRows.forEach(r => { if (r.EMPRESA) hcEmp[r.EMPRESA] = (hcEmp[r.EMPRESA] ?? 0) + 1; });
+  // Costos → raw_rows filtrados por ANO_SALIDA
+  const cosRows = ((costos?.raw_rows as AnyObj[]) ?? []).filter(r => Number(r.ANO_SALIDA) === year);
 
   const salEmp: Record<string, number> = {};
   rotRows.forEach(r => { if (r.EMPRESA) salEmp[r.EMPRESA] = (salEmp[r.EMPRESA] ?? 0) + 1; });
@@ -94,11 +91,11 @@ function computeKpisForYear(
   return {
     year,
     total,
-    pct_mujeres:  total ? +(mujeres / total * 100).toFixed(1) : null,
-    lider_pct:    total ? +(lideres / total * 100).toFixed(1) : null,
-    salidas:      rotRows.length,
+    pct_mujeres:   nomKpis.pct_mujeres   != null ? Number(nomKpis.pct_mujeres)   : null,
+    lider_pct:     nomKpis.lider_pct     != null ? Number(nomKpis.lider_pct)     : null,
+    salidas:       rotRows.length,
     tasa_rotacion: total > 0 ? +(rotRows.length / total * 100).toFixed(1) : null,
-    perm_prom:    permProm !== null ? +permProm.toFixed(1) : null,
+    perm_prom:     permProm !== null ? +permProm.toFixed(1) : null,
     sobrecosto,
     total_costo,
     liquidaciones: cosRows.length || null,
@@ -178,17 +175,24 @@ function buildResumenPayload(
   reclutamientoData: AnyObj | null,
   year: number | "todos",
 ) {
+  // Nomina es single-year (un archivo por carga), se incluye siempre sin filtrar.
+  // Solo rotacion y costos tienen multi-año via raw_rows.
+  const nomP = nominaData ?? undefined;
+
   if (year === "todos") {
-    return { nomina: nominaData ?? undefined, rotacion: rotacionData ?? undefined,
+    return { nomina: nomP, rotacion: rotacionData ?? undefined,
              liquidaciones: costosData ?? undefined, reclutamiento: reclutamientoData ?? undefined };
   }
-  const nomRows = ((nominaData?.tabla      as AnyObj[]) ?? []).filter(r => Number(r.ANO_EVALUACION) === year);
-  const rotAll  = ((rotacionData?.raw_rows as AnyObj[]) ?? []).filter(r => Number(r.ANO_REPORTE)    === year);
+
+  const nomTotal = Number((nominaData?.kpis as AnyObj)?.total ?? 0);
+
+  const rotAll  = ((rotacionData?.raw_rows as AnyObj[]) ?? []).filter(r => Number(r.ANO_REPORTE) === year);
   const rotRows = rotAll.filter(r => String(r.SITUACION).toUpperCase() === "I");
-  const cosRows = ((costosData?.raw_rows   as AnyObj[]) ?? []).filter(r => Number(r.ANO_SALIDA)     === year);
-  const nomP = nominaData   ? buildNominaPayload(nomRows)                        : undefined;
-  const rotP = rotacionData ? buildRotacionPayload(rotRows, nomP?.kpis?.total ?? 0) : undefined;
-  const cosP = costosData   ? buildCostosPayload(cosRows)                        : undefined;
+  const cosRows = ((costosData?.raw_rows   as AnyObj[]) ?? []).filter(r => Number(r.ANO_SALIDA)  === year);
+
+  const rotP = rotacionData ? buildRotacionPayload(rotRows, nomTotal) : undefined;
+  const cosP = costosData   ? buildCostosPayload(cosRows)             : undefined;
+
   return { nomina: nomP, rotacion: rotP, liquidaciones: cosP,
            reclutamiento: reclutamientoData ?? undefined };
 }
