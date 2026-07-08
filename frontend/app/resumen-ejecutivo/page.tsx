@@ -375,6 +375,20 @@ function SecHeader({ title, icon }: { title: string; icon: string }) {
   );
 }
 
+function ModuloAnalisis({ texto }: { texto?: string }) {
+  if (!texto) return null;
+  return (
+    <div className="mb-4 rounded-lg px-4 py-3"
+      style={{ border: "1px solid rgba(124,90,246,0.2)", background: "rgba(124,90,246,0.05)" }}>
+      <p className="label-xs mb-1.5 flex items-center gap-1.5">
+        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
+        Análisis IA
+      </p>
+      <p style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.65 }}>{texto}</p>
+    </div>
+  );
+}
+
 function GraficosHolding({
   nominaData,
   rotacionData,
@@ -382,6 +396,7 @@ function GraficosHolding({
   reclutamientoData,
   selectedYear,
   narrativaHolding,
+  narrativasGraficos,
 }: {
   nominaData: AnyObj | null;
   rotacionData: AnyObj | null;
@@ -389,6 +404,7 @@ function GraficosHolding({
   reclutamientoData: AnyObj | null;
   selectedYear: number | "todos";
   narrativaHolding?: string;
+  narrativasGraficos?: Record<string, string>;
 }) {
   // ── Rotación: rows filtrados por año ──────────────────────────────────────
   const rotRaw  = (rotacionData?.raw_rows as AnyObj[]) ?? [];
@@ -506,6 +522,7 @@ function GraficosHolding({
       {hasNomina && (
         <>
           <SecHeader title="Nómina" icon="👥" />
+          <ModuloAnalisis texto={narrativasGraficos?.nomina} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div className="chart-card">
@@ -567,6 +584,7 @@ function GraficosHolding({
       {hasRot && (
         <>
           <SecHeader title="Rotación de Personal" icon="🔄" />
+          <ModuloAnalisis texto={narrativasGraficos?.rotacion} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {rotEmpSet.length > 0 && (
@@ -612,6 +630,7 @@ function GraficosHolding({
       {hasCos && (
         <>
           <SecHeader title="Costos de Liquidaciones" icon="💸" />
+          <ModuloAnalisis texto={narrativasGraficos?.costos} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div className="chart-card">
@@ -639,6 +658,7 @@ function GraficosHolding({
       {hasRec && (
         <>
           <SecHeader title="Reclutamiento" icon="🔍" />
+          <ModuloAnalisis texto={narrativasGraficos?.reclutamiento} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {topPerfiles.length > 0 && (
@@ -961,8 +981,9 @@ export default function ResumenEjecutivoPage() {
   }
 
   // ── Result display ────────────────────────────────────────────────────────
-  const narrativas:      Record<string, string> = (result?.narrativas        as Record<string, string>) ?? {};
-  const narrativaHolding: string               = (result?.narrativa_holding as string) ?? "";
+  const narrativas:         Record<string, string> = (result?.narrativas          as Record<string, string>) ?? {};
+  const narrativaHolding:  string                 = (result?.narrativa_holding   as string) ?? "";
+  const narrativasGraficos: Record<string, string> = (result?.narrativas_graficos as Record<string, string>) ?? {};
   const metricasEmp:  Record<string, AnyObj> = (result?.metricas_empresa  as Record<string, AnyObj>) ?? {};
   const kpisConsol:   AnyObj                 = (result?.kpis_consolidados as AnyObj) ?? {};
   const empresas:     string[]               = (result?.empresas          as string[]) ?? [];
@@ -1124,6 +1145,7 @@ export default function ResumenEjecutivoPage() {
             reclutamientoData={reclutamientoData}
             selectedYear={selectedYear}
             narrativaHolding={narrativaHolding}
+            narrativasGraficos={narrativasGraficos}
           />
         </>
       )}

@@ -84,6 +84,44 @@ Sin markdown, sin bullets, solo texto ejecutivo en español."""
         return f"[Error IA: {type(e).__name__}]"
 
 
+def insight_modulo_ia(modulo: str, datos_json: str) -> str:
+    prompts = {
+        "nomina": (
+            "Analizá la distribución de headcount, composición por sexo, generaciones y liderazgo del holding. "
+            "En 2-3 oraciones: qué empresa concentra más personal, cómo es la diversidad y cuál es el perfil de liderazgo."
+        ),
+        "rotacion": (
+            "Analizá las salidas por empresa, tasas de rotación, motivos de egreso y tendencia mensual. "
+            "En 2-3 oraciones: dónde está el mayor riesgo de rotación, cuáles son los motivos dominantes y si la tendencia mejora o empeora."
+        ),
+        "costos": (
+            "Analizá el sobrecosto por empresa y la tendencia mensual de costos de liquidaciones. "
+            "En 2-3 oraciones: qué empresa genera mayor impacto económico, si el costo está concentrado o distribuido y cómo evolucionó."
+        ),
+        "reclutamiento": (
+            "Analizá los perfiles más buscados y la distribución de búsquedas por agencia. "
+            "En 2-3 oraciones: qué perfiles son más críticos, qué agencia tiene mayor demanda y qué implica para la planificación de RRHH."
+        ),
+    }
+    instruccion = prompts.get(modulo, "Analizá los datos en 2-3 oraciones ejecutivas.")
+    prompt = f"""Sos un consultor senior de RRHH del holding Texo (empresas publicitarias en Paraguay).
+
+Datos del módulo {modulo.upper()}:
+{datos_json}
+
+{instruccion}
+Sin markdown, sin bullets, solo texto ejecutivo en español."""
+    try:
+        r = client.messages.create(
+            model="claude-haiku-4-5-20251001", max_tokens=200,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return r.content[0].text.strip()
+    except Exception as e:
+        print(f"[resumen] insight_modulo_ia ERROR ({modulo}): {e}")
+        return ""
+
+
 def insight_empresa_ia(data_json: str, empresa: str) -> str:
     prompt = f"""Sos un consultor de RRHH analizando datos del holding Texo (empresas publicitarias en Paraguay).
 Estos son los indicadores clave de la empresa {empresa}:
@@ -291,14 +329,61 @@ async def procesar_resumen(payload: ResumenRequest):
     # ── Narrativa holding (análisis global) ───────────────────────────────────
     narrativa_holding = insight_holding_ia(kpis_consolidados, empresas_disp)
 
+    # ── Narrativas por módulo (para los gráficos) ─────────────────────────────
+    narrativas_graficos: dict[str, str] = {}
+
+    if payload.nomina:
+        nom_datos = {
+            "headcount_por_empresa": payload.nomina.get("kpis", {}).get("por_empresa", {}),
+            "pct_mujeres":           payload.nomina.get("kpis", {}).get("pct_mujeres"),
+            "lider_pct":             payload.nomina.get("kpis", {}).get("lider_pct"),
+            "sexo_por_empresa":      (payload.nomina.get("genero") or {}).get("por_empresa", []),
+            "generaciones":          (payload.nomina.get("generaciones") or {}).get("distribucion", []),
+            "liderazgo_por_empresa": (payload.nomina.get("liderazgo") or {}).get("pct_por_empresa", []),
+        }
+        narrativas_graficos["nomina"] = insight_modulo_ia(
+            "nomina", json.dumps(nom_datos, ensure_ascii=False, indent=2)
+        )
+
+    if payload.rotacion:
+        rot_datos = {
+            "kpis":               payload.rotacion.get("kpis", {}),
+            "salidas_por_empresa": payload.rotacion.get("por_empresa", {}).get("salidas", []),
+            "tasa_por_empresa":    payload.rotacion.get("por_empresa", {}).get("tasa_anual", []),
+            "motivos":             (payload.rotacion.get("motivos") or {}).get("por_categoria", []),
+        }
+        narrativas_graficos["rotacion"] = insight_modulo_ia(
+            "rotacion", json.dumps(rot_datos, ensure_ascii=False, indent=2)
+        )
+
+    if payload.liquidaciones:
+        cos_datos = {
+            "kpis":                 payload.liquidaciones.get("kpis", {}),
+            "sobrecosto_por_agencia": payload.liquidaciones.get("por_agencia", {}).get("sobrecosto_total", []),
+            "cantidad_por_agencia":   payload.liquidaciones.get("por_agencia", {}).get("cantidad", []),
+        }
+        narrativas_graficos["costos"] = insight_modulo_ia(
+            "costos", json.dumps(cos_datos, ensure_ascii=False, indent=2)
+        )
+
+    if payload.reclutamiento:
+        rec_datos = {
+            "top_perfiles":     (payload.reclutamiento.get("por_puesto") or {}).get("top15_busquedas", []),
+            "busquedas_agencia": (payload.reclutamiento.get("por_agencia") or {}).get("busquedas", []),
+        }
+        narrativas_graficos["reclutamiento"] = insight_modulo_ia(
+            "reclutamiento", json.dumps(rec_datos, ensure_ascii=False, indent=2)
+        )
+
     # ── Respuesta ─────────────────────────────────────────────────────────────
     result = {
-        "narrativas":        narrativas,
-        "narrativa_holding": narrativa_holding,
-        "kpis_consolidados": kpis_consolidados,
-        "metricas_empresa":  metricas_emp,
-        "empresas":          empresas_disp,
-        "modulos_faltantes": modulos_faltantes,
-        "mapa_empresas":     mapa_empresas,
+        "narrativas":          narrativas,
+        "narrativa_holding":   narrativa_holding,
+        "narrativas_graficos": narrativas_graficos,
+        "kpis_consolidados":   kpis_consolidados,
+        "metricas_empresa":    metricas_emp,
+        "empresas":            empresas_disp,
+        "modulos_faltantes":   modulos_faltantes,
+        "mapa_empresas":       mapa_empresas,
     }
     return JSONResponse(content=jsonable_encoder(result))
