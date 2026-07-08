@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import KpiCard from "@/components/KpiCard";
+import PlotChart, { COLOR_SEQ } from "@/components/PlotChart";
 import { useDashboard } from "@/context/DashboardContext";
 import { authHeaders } from "@/lib/auth";
 
@@ -354,6 +355,182 @@ function ComparisonTab({
           )}
         </>
       )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GRÁFICOS HOLDING
+// ══════════════════════════════════════════════════════════════════════════════
+
+function GraficosHolding({
+  nominaData,
+  metricasEmp,
+}: {
+  nominaData: AnyObj | null;
+  metricasEmp: Record<string, AnyObj>;
+}) {
+  const empresas = Object.keys(metricasEmp).sort();
+  if (!empresas.length) return null;
+
+  // ── Datos por empresa (del resultado backend ya filtrado por año) ──────────
+  const hcArr    = empresas.map(e => Number(metricasEmp[e]?.colaboradores_activos ?? 0));
+  const tasaArr  = empresas.map(e => {
+    const v = metricasEmp[e]?.tasa_rotacion;
+    return v != null ? Number(v) : null;
+  });
+  const sobArr   = empresas.map(e => {
+    const v = metricasEmp[e]?.sobrecosto;
+    return v != null ? +(Number(v) / 1_000_000).toFixed(1) : 0;
+  });
+  const salidArr = empresas.map(e => Number(metricasEmp[e]?.salidas_total ?? 0));
+
+  const hasTasa    = tasaArr.some(v => v != null);
+  const hasSob     = sobArr.some(v => (v ?? 0) > 0);
+  const hasSalidas = salidArr.some(v => v > 0);
+
+  // ── Generaciones (de nominaData pre-computado) ────────────────────────────
+  const genDist = ((nominaData?.generaciones as AnyObj)?.distribucion as AnyObj[]) ?? [];
+  const ORDEN_GEN = ["Baby Boomers", "Generación X", "Millennials", "Generación Z", "Otra"];
+  const genSorted = ORDEN_GEN.map(g => genDist.find((r: AnyObj) => r.GENERACION === g)).filter(Boolean) as AnyObj[];
+
+  // ── Sexo por empresa (de nominaData pre-computado) ────────────────────────
+  const genEmp = ((nominaData?.genero as AnyObj)?.por_empresa as AnyObj[]) ?? [];
+
+  return (
+    <div className="mt-8 space-y-4">
+      {/* Divisor */}
+      <div className="flex items-center gap-3 my-6">
+        <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+        <span className="text-xs font-semibold uppercase tracking-widest px-2" style={{ color: "var(--text3)" }}>
+          Gráficos del Holding
+        </span>
+        <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* 1. Headcount + Tasa Rotación (dual axis) */}
+        {(hcArr.some(v => v > 0) || hasSalidas) && (
+          <div className="chart-card">
+            <h3 className="chart-title">Headcount y Salidas por Empresa</h3>
+            <PlotChart
+              height={280}
+              data={[
+                {
+                  type: "bar",
+                  name: "Headcount",
+                  x: empresas,
+                  y: hcArr,
+                  marker: { color: COLOR_SEQ[0] },
+                  text: hcArr.map(String),
+                  textposition: "outside",
+                },
+                ...(hasSalidas ? [{
+                  type: "bar" as const,
+                  name: "Salidas",
+                  x: empresas,
+                  y: salidArr,
+                  marker: { color: COLOR_SEQ[6] },
+                  text: salidArr.map(String),
+                  textposition: "outside" as const,
+                }] : []),
+                ...(hasTasa ? [{
+                  type: "scatter" as const,
+                  mode: "lines+markers+text" as const,
+                  name: "% Rotación",
+                  x: empresas,
+                  y: tasaArr,
+                  yaxis: "y2" as const,
+                  line: { color: "#f59e0b", width: 2 },
+                  text: tasaArr.map(v => v != null ? `${v}%` : ""),
+                  textposition: "top center" as const,
+                }] : []),
+              ]}
+              layout={{
+                barmode: "group",
+                legend: { orientation: "h", y: -0.25 },
+                ...(hasTasa ? {
+                  yaxis2: { overlaying: "y", side: "right", showgrid: false, ticksuffix: "%" },
+                } : {}),
+              }}
+            />
+          </div>
+        )}
+
+        {/* 2. Sobrecosto por empresa */}
+        {hasSob && (
+          <div className="chart-card">
+            <h3 className="chart-title">Sobrecosto por Empresa (M ₲)</h3>
+            <PlotChart
+              height={280}
+              data={[{
+                type: "bar",
+                x: empresas,
+                y: sobArr,
+                marker: {
+                  color: sobArr.map(v =>
+                    (v ?? 0) > 50 ? "#ef4444" : (v ?? 0) > 20 ? "#f59e0b" : "#10b981"
+                  ),
+                },
+                text: sobArr.map(v => v != null ? `₲ ${v}M` : ""),
+                textposition: "outside",
+              }]}
+              layout={{ showlegend: false }}
+            />
+          </div>
+        )}
+
+        {/* 3. Brecha Generacional */}
+        {genSorted.length > 0 && (
+          <div className="chart-card">
+            <h3 className="chart-title">Brecha Generacional</h3>
+            <PlotChart
+              height={280}
+              data={[{
+                type: "bar",
+                x: genSorted.map(r => String(r.GENERACION)),
+                y: genSorted.map(r => Number(r.Cantidad ?? r.cantidad ?? 0)),
+                marker: { color: genSorted.map((_, i) => COLOR_SEQ[i % COLOR_SEQ.length]) },
+                text: genSorted.map(r => String(Number(r.Cantidad ?? r.cantidad ?? 0))),
+                textposition: "outside",
+              }]}
+              layout={{ showlegend: false }}
+            />
+          </div>
+        )}
+
+        {/* 4. Distribución por Sexo por Empresa */}
+        {genEmp.length > 0 && (
+          <div className="chart-card">
+            <h3 className="chart-title">Distribución por Sexo por Empresa</h3>
+            <PlotChart
+              height={280}
+              data={[
+                {
+                  type: "bar",
+                  name: "Mujeres",
+                  x: genEmp.map((r: AnyObj) => String(r.EMPRESA)),
+                  y: genEmp.map((r: AnyObj) => Number(r.Mujeres ?? 0)),
+                  marker: { color: "#d946ef" },
+                },
+                {
+                  type: "bar",
+                  name: "Hombres",
+                  x: genEmp.map((r: AnyObj) => String(r.EMPRESA)),
+                  y: genEmp.map((r: AnyObj) => Number(r.Hombres ?? 0)),
+                  marker: { color: "#06b6d4" },
+                },
+              ]}
+              layout={{
+                barmode: "stack",
+                legend: { orientation: "h", y: -0.25 },
+              }}
+            />
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
@@ -797,6 +974,8 @@ export default function ResumenEjecutivoPage() {
                 narrativa={narrativas[empresa] ?? ""} />
             ))}
           </div>
+
+          <GraficosHolding nominaData={nominaData} metricasEmp={metricasEmp} />
         </>
       )}
     </div>
