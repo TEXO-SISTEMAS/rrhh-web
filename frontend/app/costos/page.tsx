@@ -216,6 +216,7 @@ export default function CostosPage() {
   const [dragging, setDragging]       = useState(false);
   const [activeTab, setActiveTab]     = useState("agencia");
   const [showUpload, setShowUpload]   = useState(false);
+  const [replaceAll, setReplaceAll]   = useState(false);
   const [anoUpload, setAnoUpload]     = useState("2025");
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -250,7 +251,7 @@ export default function CostosPage() {
       }
       const json = await res.json();
       let merged = json;
-      if (prevData) {
+      if (!replaceAll && prevData) {
         const newRows = (json.raw_rows as Row[]) ?? [];
         const newYears = new Set(newRows.map((r) => String(r.ANO_SALIDA ?? "")));
         const existingRows = (prevData.raw_rows as Row[]) ?? [];
@@ -455,6 +456,10 @@ export default function CostosPage() {
             <p className="text-sm font-medium" style={{ color: "var(--text)" }}>Cargar nuevos datos de costos</p>
             <button onClick={() => { setShowUpload(false); setError(null); }} className="text-xs transition" style={{ color: "var(--text3)" }}>Cancelar</button>
           </div>
+          <label className="flex items-center gap-2 mb-3 cursor-pointer select-none w-fit">
+            <input type="checkbox" checked={replaceAll} onChange={(e) => setReplaceAll(e.target.checked)} className="accent-indigo-500 w-4 h-4" />
+            <span className="text-xs" style={{ color: "var(--text2)" }}>Reemplazar todos los datos (elimina años anteriores)</span>
+          </label>
           <div
             onClick={() => inputRef.current?.click()}
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}

@@ -208,6 +208,7 @@ export default function NominaPage() {
   const [mounted, setMounted] = useState(false);
   const [data, setData] = useState<AnyObj | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [replaceAll, setReplaceAll] = useState(false);
   const [tab, setTab] = useState("distribucion");
 
   useEffect(() => { setMounted(true); }, []);
@@ -237,12 +238,15 @@ export default function NominaPage() {
 
   function handleResult(result: AnyObj) {
     const newRows = (result.tabla as Row[]) ?? [];
-    const newYears = new Set(newRows.map((r) => String(r.ANO_EVALUACION ?? "")));
-    const existingRows = (data?.tabla as Row[]) ?? [];
-    const mergedRows = [
-      ...existingRows.filter((r) => !newYears.has(String(r.ANO_EVALUACION ?? ""))),
-      ...newRows,
-    ];
+    let mergedRows = newRows;
+    if (!replaceAll) {
+      const newYears = new Set(newRows.map((r) => String(r.ANO_EVALUACION ?? "")));
+      const existingRows = (data?.tabla as Row[]) ?? [];
+      mergedRows = [
+        ...existingRows.filter((r) => !newYears.has(String(r.ANO_EVALUACION ?? ""))),
+        ...newRows,
+      ];
+    }
     const merged = { ...result, tabla: mergedRows };
     setData(merged);
     setNominaData(merged);
@@ -308,6 +312,10 @@ export default function NominaPage() {
             <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>Actualizar datos de nómina</span>
             <button onClick={() => setShowUpload(false)} className="text-xs px-3 py-1 rounded-lg" style={{ background: "var(--card2)", color: "var(--text2)" }}>Cancelar</button>
           </div>
+          <label className="flex items-center gap-2 mb-3 cursor-pointer select-none w-fit">
+            <input type="checkbox" checked={replaceAll} onChange={(e) => setReplaceAll(e.target.checked)} className="accent-indigo-500 w-4 h-4" />
+            <span className="text-xs" style={{ color: "var(--text2)" }}>Reemplazar todos los datos (elimina años anteriores)</span>
+          </label>
           <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult}
             />
         </div>

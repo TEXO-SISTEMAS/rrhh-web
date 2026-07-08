@@ -78,11 +78,12 @@ const NAV_ITEMS = [
   },
 ];
 
-function FilterGroups() {
+function FilterGroups({ pathname }: { pathname: string }) {
   const { configs, rows, selected, onChange } = useFilter();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   if (!configs.length || !rows.length) return null;
+  if (pathname.startsWith("/resumen-ejecutivo")) return null;
 
   const hasAny = Object.values(selected).some((v) => v.length > 0);
 
@@ -286,7 +287,7 @@ export default function Sidebar({ open = true }: { open?: boolean }) {
 
       {/* Filters (contextual, scrollable) */}
       <div className="flex-1 overflow-y-auto mt-2">
-        <FilterGroups />
+        <FilterGroups pathname={pathname} />
       </div>
 
       {/* Footer */}

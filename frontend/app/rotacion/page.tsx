@@ -510,6 +510,7 @@ export default function RotacionPage() {
   const [data, setData]       = useState<AnyObj | null>(null);
   const [activeTab, setActiveTab] = useState("general");
   const [showUpload, setShowUpload] = useState(false);
+  const [replaceAll, setReplaceAll] = useState(false);
   const [respData, setRespData]     = useState<AnyObj | null>(null);
   const [showRespUpload, setShowRespUpload] = useState(false);
 
@@ -535,12 +536,15 @@ export default function RotacionPage() {
 
   function handleResult(result: AnyObj) {
     const newRows = (result.raw_rows as Row[]) ?? [];
-    const newYears = new Set(newRows.map((r) => String(r.ANO_REPORTE ?? "")));
-    const existingRows = (data?.raw_rows as Row[]) ?? [];
-    const mergedRows = [
-      ...existingRows.filter((r) => !newYears.has(String(r.ANO_REPORTE ?? ""))),
-      ...newRows,
-    ];
+    let mergedRows = newRows;
+    if (!replaceAll) {
+      const newYears = new Set(newRows.map((r) => String(r.ANO_REPORTE ?? "")));
+      const existingRows = (data?.raw_rows as Row[]) ?? [];
+      mergedRows = [
+        ...existingRows.filter((r) => !newYears.has(String(r.ANO_REPORTE ?? ""))),
+        ...newRows,
+      ];
+    }
     const merged = { ...result, raw_rows: mergedRows };
     setData(merged);
     setRotacionData(merged);
@@ -689,6 +693,10 @@ export default function RotacionPage() {
             <p className="text-sm font-medium" style={{ color: "var(--text)" }}>Cargar nuevos datos de rotación</p>
             <button onClick={() => setShowUpload(false)} className="text-xs transition" style={{ color: "var(--text3)" }}>Cancelar</button>
           </div>
+          <label className="flex items-center gap-2 mb-3 cursor-pointer select-none w-fit">
+            <input type="checkbox" checked={replaceAll} onChange={(e) => setReplaceAll(e.target.checked)} className="accent-indigo-500 w-4 h-4" />
+            <span className="text-xs" style={{ color: "var(--text2)" }}>Reemplazar todos los datos (elimina años anteriores)</span>
+          </label>
           <FileUpload endpoint="/api/rotacion" fieldName="files" multiple onResult={handleResult}
             />
         </div>
