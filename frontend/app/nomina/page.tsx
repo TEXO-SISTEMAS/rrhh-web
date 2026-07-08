@@ -262,7 +262,7 @@ export default function NominaPage() {
         </div>
         <div className="w-full max-w-md">
           <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult}
-            yearField={{ key: "ano", label: "¿A qué año de evaluación corresponde este archivo?", defaultValue: "2025" }} />
+            />
         </div>
       </div>
     );
@@ -309,7 +309,7 @@ export default function NominaPage() {
             <button onClick={() => setShowUpload(false)} className="text-xs px-3 py-1 rounded-lg" style={{ background: "var(--card2)", color: "var(--text2)" }}>Cancelar</button>
           </div>
           <FileUpload endpoint="/api/nomina" fieldName="file" multiple={false} onResult={handleResult}
-            yearField={{ key: "ano", label: "¿A qué año de evaluación corresponde este archivo?", defaultValue: "2025" }} />
+            />
         </div>
       )}
 

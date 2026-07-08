@@ -176,7 +176,7 @@ def _safe_float(v) -> float | None:
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.post("")
-async def procesar_nomina(file: UploadFile = File(...), ano: int = Form(date.today().year)):
+async def procesar_nomina(file: UploadFile = File(...), ano: int | None = Form(default=None)):
     # ── Leer Excel ────────────────────────────────────────────────────────────
     try:
         contents = await validar_excel(file)
@@ -197,8 +197,14 @@ async def procesar_nomina(file: UploadFile = File(...), ano: int = Form(date.tod
     if df.empty:
         raise HTTPException(status_code=422, detail="No se encontraron colaboradores activos.")
 
-    # ── Año de evaluación ─────────────────────────────────────────────────────
-    df["ANO_EVALUACION"] = ano
+    # ── Año de evaluación: columna del Excel tiene prioridad ─────────────────
+    if "ANO_EVALUACION" in df.columns:
+        # Usar el valor más frecuente de la columna (ignorar NaN)
+        vals = pd.to_numeric(df["ANO_EVALUACION"], errors="coerce").dropna()
+        ano_detectado = int(vals.mode().iloc[0]) if not vals.empty else (ano or date.today().year)
+        df["ANO_EVALUACION"] = ano_detectado
+    else:
+        df["ANO_EVALUACION"] = ano or date.today().year
 
     # ── Inferir sexo con IA ───────────────────────────────────────────────────
     if "NOMBRE" in df.columns:

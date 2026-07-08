@@ -166,6 +166,13 @@ COL_MAP_NOMINA = {
     "TIPO_EMPRESA": "TIPO_EMPRESA", "TIPO DE EMPRESA": "TIPO_EMPRESA",
     "DISCAPACIDAD": "DISCAPACIDAD", "TIPO_DISCAPACIDAD": "DISCAPACIDAD",
     "TIPO DE DISCAPACIDAD": "DISCAPACIDAD", "TIPO DISCAPACIDAD": "DISCAPACIDAD",
+    # Año de evaluación — variantes normalizadas (sin tilde, uppercase)
+    "ANO DE EVALUACION": "ANO_EVALUACION",
+    "ANO EVALUACION":    "ANO_EVALUACION",
+    "ANO_EVALUACION":    "ANO_EVALUACION",
+    "YEAR":              "ANO_EVALUACION",
+    "AÑO DE EVALUACION": "ANO_EVALUACION",
+    "AÑO EVALUACION":    "ANO_EVALUACION",
 }
 
 # ─── Nómina ───────────────────────────────────────────────────────────────────
