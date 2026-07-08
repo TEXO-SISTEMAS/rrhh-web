@@ -180,12 +180,22 @@ function buildResumenPayload(
   // Solo rotacion y costos tienen multi-año via raw_rows.
   const nomP = nominaData ?? undefined;
 
-  if (year === "todos") {
-    return { nomina: nomP, rotacion: rotacionData ?? undefined,
-             liquidaciones: costosData ?? undefined, reclutamiento: reclutamientoData ?? undefined };
-  }
-
+  // Para "todos" los años: recalcular desde raw_rows agregados (igual que año específico)
+  // Así los KPIs reflejan TODOS los datos cargados, no solo el último upload
   const nomTotal = Number((nominaData?.kpis as AnyObj)?.total ?? 0);
+
+  if (year === "todos") {
+    const nomRows  = (nominaData?.tabla    as AnyObj[]) ?? [];
+    const rotAllRows = ((rotacionData?.raw_rows as AnyObj[]) ?? [])
+      .filter(r => String(r.SITUACION).toUpperCase() === "I");
+    const cosAllRows = (costosData?.raw_rows as AnyObj[]) ?? [];
+    return {
+      nomina:        nominaData  ? buildNominaPayload(nomRows)                        : undefined,
+      rotacion:      rotacionData ? buildRotacionPayload(rotAllRows, nomTotal)        : undefined,
+      liquidaciones: costosData  ? buildCostosPayload(cosAllRows)                    : undefined,
+      reclutamiento: reclutamientoData ?? undefined,
+    };
+  }
 
   const rotAll  = ((rotacionData?.raw_rows as AnyObj[]) ?? []).filter(r => Number(r.ANO_REPORTE) === year);
   const rotRows = rotAll.filter(r => String(r.SITUACION).toUpperCase() === "I");
