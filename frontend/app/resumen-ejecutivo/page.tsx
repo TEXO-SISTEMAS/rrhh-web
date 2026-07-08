@@ -363,43 +363,123 @@ function ComparisonTab({
 // GRÁFICOS HOLDING
 // ══════════════════════════════════════════════════════════════════════════════
 
+function SecHeader({ title, icon }: { title: string; icon: string }) {
+  return (
+    <div className="flex items-center gap-3 mt-8 mb-4">
+      <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+      <span className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--text2)", whiteSpace: "nowrap" }}>
+        {icon} {title}
+      </span>
+      <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+    </div>
+  );
+}
+
 function GraficosHolding({
   nominaData,
-  metricasEmp,
+  rotacionData,
+  costosData,
+  reclutamientoData,
+  selectedYear,
 }: {
   nominaData: AnyObj | null;
-  metricasEmp: Record<string, AnyObj>;
+  rotacionData: AnyObj | null;
+  costosData: AnyObj | null;
+  reclutamientoData: AnyObj | null;
+  selectedYear: number | "todos";
 }) {
-  const empresas = Object.keys(metricasEmp).sort();
-  if (!empresas.length) return null;
+  // ── Rotación: rows filtrados por año ──────────────────────────────────────
+  const rotRaw  = (rotacionData?.raw_rows as AnyObj[]) ?? [];
+  const rotFilt = selectedYear === "todos" ? rotRaw : rotRaw.filter(r => Number(r.ANO_REPORTE) === selectedYear);
+  const rotSal  = rotFilt.filter(r => String(r.SITUACION).toUpperCase() === "I");
 
-  // ── Datos por empresa (del resultado backend ya filtrado por año) ──────────
-  const hcArr    = empresas.map(e => Number(metricasEmp[e]?.colaboradores_activos ?? 0));
-  const tasaArr  = empresas.map(e => {
-    const v = metricasEmp[e]?.tasa_rotacion;
-    return v != null ? Number(v) : null;
+  // ── Costos: rows filtrados por año ────────────────────────────────────────
+  const cosRaw  = (costosData?.raw_rows as AnyObj[]) ?? [];
+  const cosFilt = selectedYear === "todos" ? cosRaw : cosRaw.filter(r => Number(r.ANO_SALIDA) === selectedYear);
+
+  // ── Nómina: datos pre-computados (single-year, sin filtro) ────────────────
+  const nomKpisEmp = ((nominaData?.kpis as AnyObj)?.por_empresa as Record<string, number>) ?? {};
+  const nomEmpArr  = Object.entries(nomKpisEmp).sort(([, a], [, b]) => b - a);
+
+  const ORDEN_GEN  = ["Baby Boomers", "Generación X", "Millennials", "Generación Z", "Otra"];
+  const genDist    = ((nominaData?.generaciones as AnyObj)?.distribucion as AnyObj[]) ?? [];
+  const genSorted  = ORDEN_GEN.map(g => genDist.find(r => r.GENERACION === g)).filter(Boolean) as AnyObj[];
+
+  const genEmp     = ((nominaData?.genero as AnyObj)?.por_empresa as AnyObj[]) ?? [];
+
+  const lidRaw     = ((nominaData?.liderazgo as AnyObj)?.pct_por_empresa as AnyObj[]) ?? [];
+  const lidSorted  = [...lidRaw].sort((a, b) => Number(b.pct_lideres ?? 0) - Number(a.pct_lideres ?? 0));
+
+  // ── Rotación: salidas + tasa por empresa (filtrado) ───────────────────────
+  const rotEmpSet  = Array.from(new Set(rotSal.map(r => String(r.EMPRESA ?? "")).filter(Boolean))).sort();
+  const salidEmp   = rotEmpSet.map(e => rotSal.filter(r => r.EMPRESA === e).length);
+  const tasaEmp    = rotEmpSet.map(e => {
+    const sal = rotSal.filter(r => r.EMPRESA === e).length;
+    const hc  = Number(nomKpisEmp[e] ?? 0);
+    return hc > 0 ? +(sal / hc * 100).toFixed(1) : null;
   });
-  const sobArr   = empresas.map(e => {
-    const v = metricasEmp[e]?.sobrecosto;
-    return v != null ? +(Number(v) / 1_000_000).toFixed(1) : 0;
+
+  // ── Rotación: motivos (filtrado) ──────────────────────────────────────────
+  const motCount: Record<string, number> = {};
+  rotSal.forEach(r => {
+    const m = String(r.MOTIVO_CATEGORIA ?? r.TIPO_SALIDA ?? "Sin categoría");
+    motCount[m] = (motCount[m] ?? 0) + 1;
   });
-  const salidArr = empresas.map(e => Number(metricasEmp[e]?.salidas_total ?? 0));
+  const motSorted = Object.entries(motCount).sort((a, b) => b[1] - a[1]);
 
-  const hasTasa    = tasaArr.some(v => v != null);
-  const hasSob     = sobArr.some(v => (v ?? 0) > 0);
-  const hasSalidas = salidArr.some(v => v > 0);
+  // ── Rotación: tendencia mensual (TODOS los datos — muestra evolución) ──────
+  const mensual    = ((rotacionData?.tendencia as AnyObj)?.mensual as AnyObj[]) ?? [];
+  const trendAnos  = Array.from(new Set(mensual.map(r => String(r.ano)))).sort();
+  const trendTraces = trendAnos.map((yr, i) => {
+    const rows = mensual.filter(r => String(r.ano) === yr).sort((a, b) => Number(a.mes) - Number(b.mes));
+    return {
+      type: "scatter" as const,
+      mode: "lines+markers" as const,
+      name: yr,
+      x: rows.map(r => String(r.mes_nombre ?? r.mes)),
+      y: rows.map(r => Number(r.salidas ?? 0)),
+      line: { color: COLOR_SEQ[i % COLOR_SEQ.length], width: 2 },
+    };
+  });
 
-  // ── Generaciones (de nominaData pre-computado) ────────────────────────────
-  const genDist = ((nominaData?.generaciones as AnyObj)?.distribucion as AnyObj[]) ?? [];
-  const ORDEN_GEN = ["Baby Boomers", "Generación X", "Millennials", "Generación Z", "Otra"];
-  const genSorted = ORDEN_GEN.map(g => genDist.find((r: AnyObj) => r.GENERACION === g)).filter(Boolean) as AnyObj[];
+  // ── Costos: sobrecosto por empresa (filtrado) ─────────────────────────────
+  const cosEmpMap: Record<string, number> = {};
+  cosFilt.forEach(r => {
+    const a = String(r.AGENCIA ?? "");
+    if (a) cosEmpMap[a] = (cosEmpMap[a] ?? 0) + Number(r.SOBRECOSTO ?? 0);
+  });
+  const cosEmps = Object.keys(cosEmpMap).sort((a, b) => cosEmpMap[b] - cosEmpMap[a]);
+  const cosSob  = cosEmps.map(e => +(cosEmpMap[e] / 1_000_000).toFixed(1));
 
-  // ── Sexo por empresa (de nominaData pre-computado) ────────────────────────
-  const genEmp = ((nominaData?.genero as AnyObj)?.por_empresa as AnyObj[]) ?? [];
+  // ── Costos: tendencia mensual (TODOS los datos) ───────────────────────────
+  const cosTend      = ((costosData?.tendencia as AnyObj)?.sobrecosto_mensual as AnyObj[]) ?? [];
+  const cosTendAnos  = Array.from(new Set(cosTend.map(r => String(r.ano ?? r.ANO_SALIDA)))).sort();
+  const cosTendTraces = cosTendAnos.map((yr, i) => {
+    const rows = cosTend.filter(r => String(r.ano ?? r.ANO_SALIDA) === yr).sort((a, b) => Number(a.mes_n) - Number(b.mes_n));
+    return {
+      type: "scatter" as const,
+      mode: "lines+markers" as const,
+      name: yr,
+      x: rows.map(r => String(r.mes ?? r.mes_n)),
+      y: rows.map(r => +(Number(r.SOBRECOSTO ?? 0) / 1_000_000).toFixed(1)),
+      line: { color: COLOR_SEQ[i % COLOR_SEQ.length], width: 2 },
+    };
+  });
+
+  // ── Reclutamiento: datos pre-computados ───────────────────────────────────
+  const topPerfiles = ((reclutamientoData?.por_puesto as AnyObj)?.top15_busquedas as AnyObj[]) ?? [];
+  const recAgencia  = ((reclutamientoData?.por_agencia as AnyObj)?.busquedas as AnyObj[]) ?? [];
+
+  // ── Guards ─────────────────────────────────────────────────────────────────
+  const hasNomina = nomEmpArr.length > 0;
+  const hasRot    = rotEmpSet.length > 0 || mensual.length > 0;
+  const hasCos    = cosEmps.length > 0;
+  const hasRec    = topPerfiles.length > 0 || recAgencia.length > 0;
+
+  if (!hasNomina && !hasRot && !hasCos && !hasRec) return null;
 
   return (
-    <div className="mt-8 space-y-4">
-      {/* Divisor */}
+    <div className="mt-8">
       <div className="flex items-center gap-3 my-6">
         <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
         <span className="text-xs font-semibold uppercase tracking-widest px-2" style={{ color: "var(--text3)" }}>
@@ -408,129 +488,178 @@ function GraficosHolding({
         <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* ── Nómina ───────────────────────────────────────────────────────── */}
+      {hasNomina && (
+        <>
+          <SecHeader title="Nómina" icon="👥" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        {/* 1. Headcount + Tasa Rotación (dual axis) */}
-        {(hcArr.some(v => v > 0) || hasSalidas) && (
-          <div className="chart-card">
-            <h3 className="chart-title">Headcount y Salidas por Empresa</h3>
-            <PlotChart
-              height={280}
-              data={[
-                {
+            <div className="chart-card">
+              <h3 className="chart-title">Headcount por Empresa</h3>
+              <PlotChart height={260} data={[{
+                type: "bar",
+                x: nomEmpArr.map(([e]) => e),
+                y: nomEmpArr.map(([, v]) => v),
+                marker: { color: nomEmpArr.map((_, i) => COLOR_SEQ[i % COLOR_SEQ.length]) },
+                text: nomEmpArr.map(([, v]) => String(v)),
+                textposition: "outside",
+              }]} layout={{ showlegend: false }} />
+            </div>
+
+            {genEmp.length > 0 && (
+              <div className="chart-card">
+                <h3 className="chart-title">Distribución por Sexo por Empresa</h3>
+                <PlotChart height={260} data={[
+                  { type: "bar", name: "Mujeres", x: genEmp.map((r: AnyObj) => String(r.EMPRESA)), y: genEmp.map((r: AnyObj) => Number(r.Mujeres ?? 0)), marker: { color: "#d946ef" } },
+                  { type: "bar", name: "Hombres", x: genEmp.map((r: AnyObj) => String(r.EMPRESA)), y: genEmp.map((r: AnyObj) => Number(r.Hombres ?? 0)), marker: { color: "#06b6d4" } },
+                ]} layout={{ barmode: "stack", legend: { orientation: "h", y: -0.3 } }} />
+              </div>
+            )}
+
+            {genSorted.length > 0 && (
+              <div className="chart-card">
+                <h3 className="chart-title">Brecha Generacional</h3>
+                <PlotChart height={260} data={[{
                   type: "bar",
-                  name: "Headcount",
-                  x: empresas,
-                  y: hcArr,
-                  marker: { color: COLOR_SEQ[0] },
-                  text: hcArr.map(String),
+                  x: genSorted.map(r => String(r.GENERACION)),
+                  y: genSorted.map(r => Number(r.Cantidad ?? r.cantidad ?? 0)),
+                  marker: { color: genSorted.map((_, i) => COLOR_SEQ[i % COLOR_SEQ.length]) },
+                  text: genSorted.map(r => String(Number(r.Cantidad ?? r.cantidad ?? 0))),
                   textposition: "outside",
-                },
-                ...(hasSalidas ? [{
-                  type: "bar" as const,
-                  name: "Salidas",
-                  x: empresas,
-                  y: salidArr,
-                  marker: { color: COLOR_SEQ[6] },
-                  text: salidArr.map(String),
-                  textposition: "outside" as const,
-                }] : []),
-                ...(hasTasa ? [{
-                  type: "scatter" as const,
-                  mode: "lines+markers+text" as const,
-                  name: "% Rotación",
-                  x: empresas,
-                  y: tasaArr,
-                  yaxis: "y2" as const,
-                  line: { color: "#f59e0b", width: 2 },
-                  text: tasaArr.map(v => v != null ? `${v}%` : ""),
-                  textposition: "top center" as const,
-                }] : []),
-              ]}
-              layout={{
-                barmode: "group",
-                legend: { orientation: "h", y: -0.25 },
-                ...(hasTasa ? {
-                  yaxis2: { overlaying: "y", side: "right", showgrid: false, ticksuffix: "%" },
-                } : {}),
-              }}
-            />
-          </div>
-        )}
+                }]} layout={{ showlegend: false }} />
+              </div>
+            )}
 
-        {/* 2. Sobrecosto por empresa */}
-        {hasSob && (
-          <div className="chart-card">
-            <h3 className="chart-title">Sobrecosto por Empresa (M ₲)</h3>
-            <PlotChart
-              height={280}
-              data={[{
-                type: "bar",
-                x: empresas,
-                y: sobArr,
-                marker: {
-                  color: sobArr.map(v =>
-                    (v ?? 0) > 50 ? "#ef4444" : (v ?? 0) > 20 ? "#f59e0b" : "#10b981"
-                  ),
-                },
-                text: sobArr.map(v => v != null ? `₲ ${v}M` : ""),
-                textposition: "outside",
-              }]}
-              layout={{ showlegend: false }}
-            />
-          </div>
-        )}
-
-        {/* 3. Brecha Generacional */}
-        {genSorted.length > 0 && (
-          <div className="chart-card">
-            <h3 className="chart-title">Brecha Generacional</h3>
-            <PlotChart
-              height={280}
-              data={[{
-                type: "bar",
-                x: genSorted.map(r => String(r.GENERACION)),
-                y: genSorted.map(r => Number(r.Cantidad ?? r.cantidad ?? 0)),
-                marker: { color: genSorted.map((_, i) => COLOR_SEQ[i % COLOR_SEQ.length]) },
-                text: genSorted.map(r => String(Number(r.Cantidad ?? r.cantidad ?? 0))),
-                textposition: "outside",
-              }]}
-              layout={{ showlegend: false }}
-            />
-          </div>
-        )}
-
-        {/* 4. Distribución por Sexo por Empresa */}
-        {genEmp.length > 0 && (
-          <div className="chart-card">
-            <h3 className="chart-title">Distribución por Sexo por Empresa</h3>
-            <PlotChart
-              height={280}
-              data={[
-                {
+            {lidSorted.length > 0 && (
+              <div className="chart-card">
+                <h3 className="chart-title">% Líderes por Empresa</h3>
+                <PlotChart height={260} data={[{
                   type: "bar",
-                  name: "Mujeres",
-                  x: genEmp.map((r: AnyObj) => String(r.EMPRESA)),
-                  y: genEmp.map((r: AnyObj) => Number(r.Mujeres ?? 0)),
-                  marker: { color: "#d946ef" },
-                },
-                {
-                  type: "bar",
-                  name: "Hombres",
-                  x: genEmp.map((r: AnyObj) => String(r.EMPRESA)),
-                  y: genEmp.map((r: AnyObj) => Number(r.Hombres ?? 0)),
-                  marker: { color: "#06b6d4" },
-                },
-              ]}
-              layout={{
-                barmode: "stack",
-                legend: { orientation: "h", y: -0.25 },
-              }}
-            />
-          </div>
-        )}
+                  orientation: "h",
+                  x: lidSorted.map(r => Number(r.pct_lideres ?? 0)),
+                  y: lidSorted.map(r => String(r.EMPRESA ?? "")),
+                  marker: { color: COLOR_SEQ[0] },
+                  text: lidSorted.map(r => `${Number(r.pct_lideres ?? 0).toFixed(1)}%`),
+                  textposition: "outside",
+                }]} layout={{ showlegend: false }} />
+              </div>
+            )}
 
-      </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Rotación ─────────────────────────────────────────────────────── */}
+      {hasRot && (
+        <>
+          <SecHeader title="Rotación de Personal" icon="🔄" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {rotEmpSet.length > 0 && (
+              <div className="chart-card">
+                <h3 className="chart-title">Salidas y % Rotación por Empresa</h3>
+                <PlotChart height={260} data={[
+                  { type: "bar", name: "Salidas", x: rotEmpSet, y: salidEmp, marker: { color: COLOR_SEQ[6] }, text: salidEmp.map(String), textposition: "outside" },
+                  ...(tasaEmp.some(v => v != null) ? [{
+                    type: "scatter" as const, mode: "lines+markers+text" as const, name: "% Rotación",
+                    x: rotEmpSet, y: tasaEmp, yaxis: "y2" as const,
+                    line: { color: "#f59e0b", width: 2 },
+                    text: tasaEmp.map(v => v != null ? `${v}%` : ""),
+                    textposition: "top center" as const,
+                  }] : []),
+                ]} layout={{ barmode: "group", legend: { orientation: "h", y: -0.3 }, yaxis2: { overlaying: "y", side: "right", showgrid: false, ticksuffix: "%" } }} />
+              </div>
+            )}
+
+            {motSorted.length > 0 && (
+              <div className="chart-card">
+                <h3 className="chart-title">Motivos de Salida</h3>
+                <PlotChart height={260} data={[{
+                  type: "bar", orientation: "h",
+                  x: motSorted.map(([, v]) => v),
+                  y: motSorted.map(([k]) => k),
+                  marker: { color: motSorted.map((_, i) => COLOR_SEQ[i % COLOR_SEQ.length]) },
+                  text: motSorted.map(([, v]) => String(v)),
+                  textposition: "outside",
+                }]} layout={{ showlegend: false, margin: { l: 160, t: 24, r: 60, b: 48 } }} />
+              </div>
+            )}
+
+            {trendTraces.length > 0 && (
+              <div className="chart-card md:col-span-2">
+                <h3 className="chart-title">Tendencia Mensual de Salidas</h3>
+                <PlotChart height={220} data={trendTraces} layout={{ legend: { orientation: "h", y: -0.3 } }} />
+              </div>
+            )}
+
+          </div>
+        </>
+      )}
+
+      {/* ── Costos ───────────────────────────────────────────────────────── */}
+      {hasCos && (
+        <>
+          <SecHeader title="Costos de Liquidaciones" icon="💸" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div className="chart-card">
+              <h3 className="chart-title">Sobrecosto por Empresa (M ₲)</h3>
+              <PlotChart height={260} data={[{
+                type: "bar", x: cosEmps, y: cosSob,
+                marker: { color: cosSob.map(v => v > 50 ? "#ef4444" : v > 20 ? "#f59e0b" : "#10b981") },
+                text: cosSob.map(v => `₲ ${v}M`),
+                textposition: "outside",
+              }]} layout={{ showlegend: false }} />
+            </div>
+
+            {cosTendTraces.length > 0 && (
+              <div className="chart-card">
+                <h3 className="chart-title">Tendencia de Sobrecosto Mensual (M ₲)</h3>
+                <PlotChart height={260} data={cosTendTraces} layout={{ legend: { orientation: "h", y: -0.3 } }} />
+              </div>
+            )}
+
+          </div>
+        </>
+      )}
+
+      {/* ── Reclutamiento ────────────────────────────────────────────────── */}
+      {hasRec && (
+        <>
+          <SecHeader title="Reclutamiento" icon="🔍" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {topPerfiles.length > 0 && (
+              <div className="chart-card">
+                <h3 className="chart-title">Top Perfiles Más Buscados</h3>
+                <PlotChart height={320} data={[{
+                  type: "bar", orientation: "h",
+                  x: topPerfiles.map(r => Number(r.busquedas ?? 0)),
+                  y: topPerfiles.map(r => String(r.POSICION ?? "")),
+                  marker: { color: COLOR_SEQ[2] },
+                  text: topPerfiles.map(r => String(r.busquedas ?? "")),
+                  textposition: "outside",
+                }]} layout={{ showlegend: false, margin: { l: 180, t: 24, r: 60, b: 48 } }} />
+              </div>
+            )}
+
+            {recAgencia.length > 0 && (
+              <div className="chart-card">
+                <h3 className="chart-title">Búsquedas por Agencia</h3>
+                <PlotChart height={320} data={[{
+                  type: "bar",
+                  x: recAgencia.map(r => String(r.AGENCIA ?? "")),
+                  y: recAgencia.map(r => Number(r.busquedas ?? 0)),
+                  marker: { color: recAgencia.map((_, i) => COLOR_SEQ[i % COLOR_SEQ.length]) },
+                  text: recAgencia.map(r => String(r.busquedas ?? "")),
+                  textposition: "outside",
+                }]} layout={{ showlegend: false }} />
+              </div>
+            )}
+
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -975,7 +1104,13 @@ export default function ResumenEjecutivoPage() {
             ))}
           </div>
 
-          <GraficosHolding nominaData={nominaData} metricasEmp={metricasEmp} />
+          <GraficosHolding
+            nominaData={nominaData}
+            rotacionData={rotacionData}
+            costosData={costosData}
+            reclutamientoData={reclutamientoData}
+            selectedYear={selectedYear}
+          />
         </>
       )}
     </div>
