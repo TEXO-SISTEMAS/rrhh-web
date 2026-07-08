@@ -561,11 +561,9 @@ function GraficosHolding({
                 <PlotChart height={260} data={[
                   { type: "bar", name: "Salidas", x: rotEmpSet, y: salidEmp, marker: { color: COLOR_SEQ[6] }, text: salidEmp.map(String), textposition: "outside" },
                   ...(tasaEmp.some(v => v != null) ? [{
-                    type: "scatter" as const, mode: "lines+markers+text" as const, name: "% Rotación",
+                    type: "scatter" as const, mode: "lines+markers" as const, name: "% Rotación",
                     x: rotEmpSet, y: tasaEmp, yaxis: "y2" as const,
                     line: { color: "#f59e0b", width: 2 },
-                    text: tasaEmp.map(v => v != null ? `${v}%` : ""),
-                    textposition: "top center" as const,
                   }] : []),
                 ]} layout={{ barmode: "group", legend: { orientation: "h", y: -0.3 }, yaxis2: { overlaying: "y", side: "right", showgrid: false, ticksuffix: "%" } }} />
               </div>
