@@ -25,6 +25,7 @@ from services.utils import (
     CATEGORIAS_MOTIVOS,
     MESES_NOMBRE,
     calcular_tasa_anual,
+    detectar_ano_columna,
     detectar_mes,
     normalizar_df,
     validar_excel,
@@ -160,7 +161,7 @@ def _safe_float(v) -> float | None:
 @router.post("")
 async def procesar_rotacion(
     files: List[UploadFile] = File(...),
-    ano: int = Form(...),
+    ano: int | None = Form(default=None),
 ):
 
     # ── Leer y normalizar todas las hojas de todos los archivos ───────────────
@@ -191,7 +192,8 @@ async def procesar_rotacion(
                 df_raw = pd.read_excel(xl, sheet_name=hoja)
                 if df_raw.empty or len(df_raw.columns) < 3:
                     continue
-                df_norm = normalizar_df(df_raw, df_raw.columns[0], mes, int(ano))
+                ano_hoja = detectar_ano_columna(df_raw) or ano or date.today().year
+                df_norm = normalizar_df(df_raw, df_raw.columns[0], mes, int(ano_hoja))
                 del df_raw
                 df = df_norm if df is None else pd.concat([df, df_norm], ignore_index=True)
                 del df_norm

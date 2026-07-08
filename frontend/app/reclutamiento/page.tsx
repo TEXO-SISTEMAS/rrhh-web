@@ -201,7 +201,7 @@ export default function ReclutamientoPage() {
         </div>
         <div className="w-full max-w-md">
           <FileUpload endpoint="/api/reclutamiento" fieldName="files" multiple onResult={handleResult}
-            yearField={{ key: "ano", defaultValue: "2025" }} />
+            />
         </div>
       </div>
     );
@@ -253,7 +253,7 @@ export default function ReclutamientoPage() {
             <span className="text-xs" style={{ color: "var(--text2)" }}>Reemplazar todos los datos (elimina años anteriores)</span>
           </label>
           <FileUpload endpoint="/api/reclutamiento" fieldName="files" multiple onResult={handleResult}
-            yearField={{ key: "ano", defaultValue: "2025" }} />
+            />
         </div>
       )}
 

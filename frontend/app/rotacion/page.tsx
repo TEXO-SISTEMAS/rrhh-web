@@ -574,7 +574,7 @@ export default function RotacionPage() {
         </div>
         <div className="w-full max-w-md">
           <FileUpload endpoint="/api/rotacion" fieldName="files" multiple onResult={handleResult}
-            yearField={{ key: "ano", defaultValue: "2025" }} />
+            />
         </div>
       </div>
     );
@@ -690,7 +690,7 @@ export default function RotacionPage() {
             <button onClick={() => setShowUpload(false)} className="text-xs transition" style={{ color: "var(--text3)" }}>Cancelar</button>
           </div>
           <FileUpload endpoint="/api/rotacion" fieldName="files" multiple onResult={handleResult}
-            yearField={{ key: "ano", defaultValue: "2025" }} />
+            />
         </div>
       )}
 

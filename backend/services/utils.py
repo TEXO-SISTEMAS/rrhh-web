@@ -272,6 +272,30 @@ def detectar_mes(nombre_ficha: str, ia_func=None) -> int:
     return 0
 
 
+def detectar_ano_columna(df_raw: pd.DataFrame) -> int | None:
+    """
+    Busca una columna de año de evaluación en el DataFrame sin normalizar.
+    Soporta variantes con/sin tilde, con espacios o guiones bajos.
+    Devuelve el año (int) más frecuente o None si no se encuentra.
+    """
+    # Normalizar nombres de columna para comparación
+    norm_cols = {
+        col: (str(col).strip().upper()
+              .replace("Á", "A").replace("É", "E").replace("Í", "I")
+              .replace("Ó", "O").replace("Ú", "U").replace("Ñ", "N")
+              .replace(" ", "_").replace(".", ""))
+        for col in df_raw.columns
+    }
+    TARGETS = {"ANO_DE_EVALUACION", "ANO_EVALUACION", "ANO_EVALUACION_", "YEAR", "ANO"}
+    for original, normalizada in norm_cols.items():
+        if normalizada in TARGETS:
+            vals = pd.to_numeric(df_raw[original], errors="coerce").dropna()
+            vals = vals[vals.between(2000, 2100)]
+            if not vals.empty:
+                return int(vals.mode().iloc[0])
+    return None
+
+
 def normalizar_df(df_raw: pd.DataFrame, empresa_col: str, mes: int, ano: int) -> pd.DataFrame:
     df = df_raw.copy()
     df.rename(columns={df.columns[0]: "EMPRESA"}, inplace=True)

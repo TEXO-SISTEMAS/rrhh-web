@@ -7,6 +7,7 @@ y devuelve JSON completo para todos los gráficos del módulo.
 
 import gc
 import io
+from datetime import date
 from typing import List, Optional
 
 import numpy as np
@@ -15,7 +16,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-from services.utils import COL_MAP_COSTOS, fmt_gs, sort_aic, validar_excel
+from services.utils import COL_MAP_COSTOS, detectar_ano_columna, fmt_gs, sort_aic, validar_excel
 
 router = APIRouter()
 
@@ -128,7 +129,7 @@ def _sum(df: pd.DataFrame, col: str) -> float:
 async def procesar_costos(
     files: List[UploadFile] = File(...),
     hoja: Optional[str] = Form(None),
-    ano: int = Form(...),
+    ano: int | None = Form(default=None),
 ):
     # ── Leer y concatenar archivos ────────────────────────────────────────────
     dfs: list[pd.DataFrame] = []
@@ -165,6 +166,10 @@ async def procesar_costos(
     if not dfs:
         raise HTTPException(status_code=422, detail="No se recibieron archivos válidos.")
 
+    # Detectar año desde columna Excel antes de concatenar
+    ano_detectado = next((detectar_ano_columna(d) for d in dfs if detectar_ano_columna(d)), None)
+    ano_fallback = ano_detectado or ano or date.today().year
+
     try:
         df = normalizar_costos(pd.concat(dfs, ignore_index=True))
         del dfs
@@ -175,11 +180,11 @@ async def procesar_costos(
     if df.empty:
         raise HTTPException(status_code=422, detail="El archivo no contiene datos.")
 
-    # Aplicar año del formulario como fallback cuando FECHA_SALIDA no pudo parsearse
+    # Aplicar año como fallback cuando FECHA_SALIDA no pudo parsearse
     if "ANO_SALIDA" not in df.columns:
-        df["ANO_SALIDA"] = ano
+        df["ANO_SALIDA"] = ano_fallback
     else:
-        df["ANO_SALIDA"] = df["ANO_SALIDA"].fillna(ano)
+        df["ANO_SALIDA"] = df["ANO_SALIDA"].fillna(ano_fallback)
 
     # Eliminar filas de totales y filas vacías (AGENCIA null o vacío)
     if "AGENCIA" in df.columns:

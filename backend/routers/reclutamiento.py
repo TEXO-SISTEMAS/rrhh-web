@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse
 
 from services.utils import (
     contar_candidatos,
+    detectar_ano_columna,
     dias_habiles,
     normalizar_situacion,
     validar_excel,
@@ -144,7 +145,7 @@ def _mean_col(df: pd.DataFrame, col: str) -> float | None:
 @router.post("")
 async def procesar_reclutamiento(
     files: List[UploadFile] = File(...),
-    ano: int = Form(...),
+    ano: int | None = Form(default=None),
 ):
 
     # ── Leer y concatenar todos los archivos ──────────────────────────────────
@@ -165,6 +166,10 @@ async def procesar_reclutamiento(
     if not dfs:
         raise HTTPException(status_code=422, detail="No se recibieron archivos válidos.")
 
+    # Detectar año desde columna Excel antes de concatenar
+    ano_detectado = next((detectar_ano_columna(d) for d in dfs if detectar_ano_columna(d)), None)
+    ano_fallback = ano_detectado or ano or date.today().year
+
     df_raw = pd.concat(dfs, ignore_index=True)
     del dfs
     gc.collect()
@@ -180,11 +185,11 @@ async def procesar_reclutamiento(
     if df.empty:
         raise HTTPException(status_code=422, detail="El archivo no contiene datos.")
 
-    # Aplicar año del formulario como fallback cuando RECEPCION no pudo parsearse
+    # Aplicar año como fallback cuando RECEPCION no pudo parsearse
     if "ANO" not in df.columns:
-        df["ANO"] = ano
+        df["ANO"] = ano_fallback
     else:
-        df["ANO"] = df["ANO"].fillna(ano)
+        df["ANO"] = df["ANO"].fillna(ano_fallback)
 
     total = len(df)
 
