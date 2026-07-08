@@ -71,7 +71,7 @@ Respondé ÚNICAMENTE con JSON válido (sin markdown, sin texto extra):
 
     try:
         response = client.messages.create(
-            model="claude-sonnet-5", max_tokens=1200,
+            model="claude-haiku-4-5-20251001", max_tokens=1200,
             messages=[{"role": "user", "content": prompt}]
         )
         texto = re.sub(r"```json|```", "", response.content[0].text.strip()).strip()

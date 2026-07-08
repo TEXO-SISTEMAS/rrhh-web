@@ -54,7 +54,7 @@ NOMBRES:
 Respondé ÚNICAMENTE con un JSON válido. Clave = nombre exacto, valor = "M" o "F".
 Sin explicaciones, sin markdown, solo el JSON."""
     r = client.messages.create(
-        model="claude-sonnet-5", max_tokens=2000,
+        model="claude-haiku-4-5-20251001", max_tokens=2000,
         messages=[{"role": "user", "content": prompt}]
     )
     texto = re.sub(r"```json|```", "", r.content[0].text.strip()).strip()

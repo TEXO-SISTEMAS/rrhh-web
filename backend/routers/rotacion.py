@@ -65,7 +65,7 @@ def interpretar_mes_ia(nombre_ficha: str) -> int:
 Respondé ÚNICAMENTE con el número entero del mes, sin texto adicional."""
     try:
         r = client.messages.create(
-            model="claude-sonnet-5", max_tokens=10,
+            model="claude-haiku-4-5-20251001", max_tokens=10,
             messages=[{"role": "user", "content": prompt}]
         )
         return int(r.content[0].text.strip())
@@ -90,7 +90,7 @@ Respondé ÚNICAMENTE con un objeto JSON válido donde la clave es el motivo exa
 No incluyas explicaciones, markdown ni texto adicional. Solo el JSON."""
     try:
         response = client.messages.create(
-            model="claude-sonnet-5", max_tokens=2000,
+            model="claude-haiku-4-5-20251001", max_tokens=2000,
             messages=[{"role": "user", "content": prompt}]
         )
         texto = re.sub(r"```json|```", "", response.content[0].text.strip()).strip()
@@ -114,7 +114,7 @@ Analizá estos resultados y generá:
 Sé directo y ejecutivo. Máximo 200 palabras. Sin markdown excesivo."""
     try:
         response = client.messages.create(
-            model="claude-sonnet-5", max_tokens=500,
+            model="claude-haiku-4-5-20251001", max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         )
         return response.content[0].text.strip()
