@@ -496,7 +496,7 @@ export default function NominaPage() {
             })()}
             {/* Headcount por Nivel AIC */}
             {(() => {
-              const NIVEL_ORDER = ["JUNIOR", "INTERMEDIO", "SENIOR", "GERENCIA", "DIRECTIVO"];
+              const NIVEL_ORDER = ["PASANTE", "PRINCIPIANTE", "JUNIOR", "INTERMEDIO", "SENIOR", "LIDER", "GERENTE"];
               const nivMap = groupBy(filteredRows.filter((r) => r.NIVEL_AIC), "NIVEL_AIC");
               const nivData = NIVEL_ORDER.filter((n) => nivMap[n])
                 .map((n) => ({ nivel: n, count: nivMap[n].length }));
