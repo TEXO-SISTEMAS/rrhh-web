@@ -90,12 +90,12 @@ def normalizar_reclutamiento(df_raw: pd.DataFrame) -> pd.DataFrame:
             axis=1,
         )
 
-    # ── AÑO y MES ─────────────────────────────────────────────────────────────
-    if "ANO" not in df.columns and "RECEPCION" in df.columns:
-        df["ANO"] = df["RECEPCION"].dt.year
-    if "MES" not in df.columns and "RECEPCION" in df.columns:
-        df["MES"] = df["RECEPCION"].dt.month
-    if "ANO" in df.columns:
+    # ── AÑO y MES — siempre desde RECEPCION (la columna AÑO/MES del Excel ────────
+    # puede contener fórmulas de texto como =GEMINI(...) en lugar de valores reales)
+    if "RECEPCION" in df.columns:
+        df["ANO"] = df["RECEPCION"].dt.year.astype("Int64")
+        df["MES"] = df["RECEPCION"].dt.month.astype("Int64")
+    elif "ANO" in df.columns:
         df["ANO"] = pd.to_numeric(df["ANO"], errors="coerce").astype("Int64")
 
     # ── Contar candidatos ─────────────────────────────────────────────────────
