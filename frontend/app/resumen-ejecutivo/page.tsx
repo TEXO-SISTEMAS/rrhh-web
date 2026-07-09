@@ -236,6 +236,40 @@ function ComparisonTab({
   const kA = computeKpisForYear(nominaData, rotacionData, costosData, yearA);
   const kB = computeKpisForYear(nominaData, rotacionData, costosData, yearB);
 
+  // ── Nómina: HC y stats per year desde tabla ──────────────────────────────
+  const nomTabla = (nominaData?.tabla as AnyObj[]) ?? [];
+  const nomA = nomTabla.filter(r => Number(r.ANO_EVALUACION) === yearA);
+  const nomB = nomTabla.filter(r => Number(r.ANO_EVALUACION) === yearB);
+  const hcEmpA: Record<string, number> = {};
+  nomA.forEach(r => { const e = String(r.EMPRESA ?? ""); if (e) hcEmpA[e] = (hcEmpA[e] ?? 0) + 1; });
+  const hcEmpB: Record<string, number> = {};
+  nomB.forEach(r => { const e = String(r.EMPRESA ?? ""); if (e) hcEmpB[e] = (hcEmpB[e] ?? 0) + 1; });
+  const nomEmps = Array.from(new Set([...Object.keys(hcEmpA), ...Object.keys(hcEmpB)])).sort();
+  const pctMujeresA = nomA.length ? +(nomA.filter(r => r.SEXO === "F").length / nomA.length * 100).toFixed(1) : null;
+  const pctMujeresB = nomB.length ? +(nomB.filter(r => r.SEXO === "F").length / nomB.length * 100).toFixed(1) : null;
+  const pctLiderA = nomA.length ? +(nomA.filter(r => String(r.LIDER).toUpperCase() === "SI").length / nomA.length * 100).toFixed(1) : null;
+  const pctLiderB = nomB.length ? +(nomB.filter(r => String(r.LIDER).toUpperCase() === "SI").length / nomB.length * 100).toFixed(1) : null;
+
+  // ── Rotación: salidas per empresa per year desde raw_rows ─────────────────
+  const rotAll = (rotacionData?.raw_rows as AnyObj[]) ?? [];
+  const rotA = rotAll.filter(r => Number(r.ANO_REPORTE) === yearA && String(r.SITUACION).toUpperCase() === "I");
+  const rotB = rotAll.filter(r => Number(r.ANO_REPORTE) === yearB && String(r.SITUACION).toUpperCase() === "I");
+  const rotEmpA: Record<string, number> = {};
+  rotA.forEach(r => { const e = String(r.EMPRESA ?? ""); if (e) rotEmpA[e] = (rotEmpA[e] ?? 0) + 1; });
+  const rotEmpB: Record<string, number> = {};
+  rotB.forEach(r => { const e = String(r.EMPRESA ?? ""); if (e) rotEmpB[e] = (rotEmpB[e] ?? 0) + 1; });
+  const rotEmps = Array.from(new Set([...Object.keys(rotEmpA), ...Object.keys(rotEmpB)])).sort();
+
+  // ── Costos: sobrecosto per empresa per year desde raw_rows ────────────────
+  const cosAll = (costosData?.raw_rows as AnyObj[]) ?? [];
+  const cosA = cosAll.filter(r => Number(r.ANO_SALIDA) === yearA);
+  const cosB = cosAll.filter(r => Number(r.ANO_SALIDA) === yearB);
+  const cosSobA: Record<string, number> = {};
+  cosA.forEach(r => { const a = String(r.AGENCIA ?? ""); if (a) cosSobA[a] = (cosSobA[a] ?? 0) + (Number(r.sobrecosto ?? r.SOBRECOSTO) || 0); });
+  const cosSobB: Record<string, number> = {};
+  cosB.forEach(r => { const a = String(r.AGENCIA ?? ""); if (a) cosSobB[a] = (cosSobB[a] ?? 0) + (Number(r.sobrecosto ?? r.SOBRECOSTO) || 0); });
+  const cosEmps = Array.from(new Set([...Object.keys(cosSobA), ...Object.keys(cosSobB)])).sort();
+
   const fN = (v: number | null, d = 0) =>
     v === null ? "—" : v.toLocaleString("es-PY", { maximumFractionDigits: d });
 
@@ -366,6 +400,95 @@ function ComparisonTab({
                 </table>
               </div>
             </div>
+          )}
+
+          {/* ── Nómina charts ─────────────────────────────────────────────── */}
+          {nominaData && nomEmps.length > 0 && (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+                <span className="text-sm font-semibold" style={{ color: "var(--text2)" }}>👥 Nómina</span>
+                <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="chart-card md:col-span-2">
+                  <h3 className="chart-title">Headcount por Empresa — {yearA} vs {yearB}</h3>
+                  <PlotChart height={280} data={[
+                    { type: "bar", name: String(yearA), x: nomEmps, y: nomEmps.map(e => hcEmpA[e] ?? 0), marker: { color: "#6366f1" }, text: nomEmps.map(e => String(hcEmpA[e] ?? 0)), textposition: "outside" as const },
+                    { type: "bar", name: String(yearB), x: nomEmps, y: nomEmps.map(e => hcEmpB[e] ?? 0), marker: { color: "#10b981" }, text: nomEmps.map(e => String(hcEmpB[e] ?? 0)), textposition: "outside" as const },
+                  ]} layout={{ barmode: "group", showlegend: true, legend: { orientation: "h", y: -0.3 }, margin: { t: 32, r: 16, b: 60, l: 50 } }} />
+                </div>
+                <div className="chart-card">
+                  <h3 className="chart-title">% Mujeres — {yearA} vs {yearB}</h3>
+                  <PlotChart height={220} data={[{
+                    type: "bar",
+                    x: [String(yearA), String(yearB)],
+                    y: [pctMujeresA ?? 0, pctMujeresB ?? 0],
+                    marker: { color: ["#6366f1", "#10b981"] },
+                    text: [pctMujeresA != null ? `${pctMujeresA}%` : "—", pctMujeresB != null ? `${pctMujeresB}%` : "—"],
+                    textposition: "outside" as const,
+                  }]} layout={{ yaxis: { ticksuffix: "%", range: [0, 100] }, showlegend: false, margin: { t: 32, r: 16, b: 48, l: 50 } }} />
+                </div>
+                <div className="chart-card">
+                  <h3 className="chart-title">% Líderes — {yearA} vs {yearB}</h3>
+                  <PlotChart height={220} data={[{
+                    type: "bar",
+                    x: [String(yearA), String(yearB)],
+                    y: [pctLiderA ?? 0, pctLiderB ?? 0],
+                    marker: { color: ["#6366f1", "#10b981"] },
+                    text: [pctLiderA != null ? `${pctLiderA}%` : "—", pctLiderB != null ? `${pctLiderB}%` : "—"],
+                    textposition: "outside" as const,
+                  }]} layout={{ yaxis: { ticksuffix: "%", range: [0, 100] }, showlegend: false, margin: { t: 32, r: 16, b: 48, l: 50 } }} />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── Rotación charts ───────────────────────────────────────────── */}
+          {rotacionData && rotEmps.length > 0 && (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+                <span className="text-sm font-semibold" style={{ color: "var(--text2)" }}>🔄 Rotación</span>
+                <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="chart-card md:col-span-2">
+                  <h3 className="chart-title">Salidas por Empresa — {yearA} vs {yearB}</h3>
+                  <PlotChart height={280} data={[
+                    { type: "bar", name: String(yearA), x: rotEmps, y: rotEmps.map(e => rotEmpA[e] ?? 0), marker: { color: "#6366f1" }, text: rotEmps.map(e => String(rotEmpA[e] ?? 0)), textposition: "outside" as const },
+                    { type: "bar", name: String(yearB), x: rotEmps, y: rotEmps.map(e => rotEmpB[e] ?? 0), marker: { color: "#10b981" }, text: rotEmps.map(e => String(rotEmpB[e] ?? 0)), textposition: "outside" as const },
+                  ]} layout={{ barmode: "group", showlegend: true, legend: { orientation: "h", y: -0.3 }, margin: { t: 32, r: 16, b: 60, l: 50 } }} />
+                </div>
+                {nominaData && nomEmps.length > 0 && (
+                  <div className="chart-card md:col-span-2">
+                    <h3 className="chart-title">Tasa de Rotación % por Empresa — {yearA} vs {yearB}</h3>
+                    <PlotChart height={280} data={[
+                      { type: "bar", name: String(yearA), x: rotEmps, y: rotEmps.map(e => (hcEmpA[e] ?? 0) > 0 ? +((rotEmpA[e] ?? 0) / hcEmpA[e] * 100).toFixed(1) : 0), marker: { color: "#6366f1" }, text: rotEmps.map(e => (hcEmpA[e] ?? 0) > 0 ? `${+((rotEmpA[e] ?? 0) / hcEmpA[e] * 100).toFixed(1)}%` : "—"), textposition: "outside" as const },
+                      { type: "bar", name: String(yearB), x: rotEmps, y: rotEmps.map(e => (hcEmpB[e] ?? 0) > 0 ? +((rotEmpB[e] ?? 0) / hcEmpB[e] * 100).toFixed(1) : 0), marker: { color: "#10b981" }, text: rotEmps.map(e => (hcEmpB[e] ?? 0) > 0 ? `${+((rotEmpB[e] ?? 0) / hcEmpB[e] * 100).toFixed(1)}%` : "—"), textposition: "outside" as const },
+                    ]} layout={{ barmode: "group", yaxis: { ticksuffix: "%" }, showlegend: true, legend: { orientation: "h", y: -0.3 }, margin: { t: 32, r: 16, b: 60, l: 50 } }} />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ── Costos charts ─────────────────────────────────────────────── */}
+          {costosData && cosEmps.length > 0 && (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+                <span className="text-sm font-semibold" style={{ color: "var(--text2)" }}>💸 Costos</span>
+                <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+              </div>
+              <div className="chart-card">
+                <h3 className="chart-title">Sobrecosto por Empresa (M ₲) — {yearA} vs {yearB}</h3>
+                <PlotChart height={280} data={[
+                  { type: "bar", name: String(yearA), x: cosEmps, y: cosEmps.map(e => +((cosSobA[e] ?? 0) / 1_000_000).toFixed(1)), marker: { color: "#6366f1" }, text: cosEmps.map(e => `₲${+((cosSobA[e] ?? 0) / 1_000_000).toFixed(1)}M`), textposition: "outside" as const },
+                  { type: "bar", name: String(yearB), x: cosEmps, y: cosEmps.map(e => +((cosSobB[e] ?? 0) / 1_000_000).toFixed(1)), marker: { color: "#10b981" }, text: cosEmps.map(e => `₲${+((cosSobB[e] ?? 0) / 1_000_000).toFixed(1)}M`), textposition: "outside" as const },
+                ]} layout={{ barmode: "group", showlegend: true, legend: { orientation: "h", y: -0.3 }, margin: { t: 32, r: 16, b: 60, l: 50 } }} />
+              </div>
+            </>
           )}
         </>
       )}
