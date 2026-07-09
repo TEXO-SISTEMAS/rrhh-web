@@ -556,8 +556,8 @@ function GraficosHolding({
               <div className="chart-card">
                 <h3 className="chart-title">Distribución por Sexo por Empresa</h3>
                 <PlotChart height={260} data={[
-                  { type: "bar", name: "Mujeres", x: genEmp.map((r: AnyObj) => String(r.EMPRESA)), y: genEmp.map((r: AnyObj) => Number(r.Mujeres ?? 0)), marker: { color: "#d946ef" } },
-                  { type: "bar", name: "Hombres", x: genEmp.map((r: AnyObj) => String(r.EMPRESA)), y: genEmp.map((r: AnyObj) => Number(r.Hombres ?? 0)), marker: { color: "#06b6d4" } },
+                  { type: "bar", name: "Mujeres", x: genEmp.map((r: AnyObj) => String(r.EMPRESA)), y: genEmp.map((r: AnyObj) => Number(r.Mujeres ?? 0)), marker: { color: "#ec4899" } },
+                  { type: "bar", name: "Hombres", x: genEmp.map((r: AnyObj) => String(r.EMPRESA)), y: genEmp.map((r: AnyObj) => Number(r.Hombres ?? 0)), marker: { color: "#3b82f6" } },
                 ]} layout={{ barmode: "stack", legend: { orientation: "h", y: -0.3 } }} />
               </div>
             )}
