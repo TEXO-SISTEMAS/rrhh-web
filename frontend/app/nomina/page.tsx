@@ -713,6 +713,25 @@ export default function NominaPage() {
               </ChartCard>
             )}
 
+            {/* Salario promedio por empresa (total) */}
+            {salEmp.length > 0 && (
+              <ChartCard title="Salario Promedio por Empresa">
+                <PlotChart
+                  light
+                  data={[{
+                    type: "bar",
+                    x: salEmp.map((r) => r.empresa),
+                    y: salEmp.map((r) => r.promedio),
+                    marker: { color: barColors(salEmp.length) },
+                    text: salEmp.map((r) => `₲${(r.promedio / 1_000_000).toFixed(1)}M`),
+                    textposition: "outside" as const,
+                  }]}
+                  layout={{ yaxis: { title: { text: "Salario Promedio (₲)" } }, margin: { t: 32, r: 16, b: 80, l: 80 } }}
+                  height={280}
+                />
+              </ChartCard>
+            )}
+
             {/* Brecha por empresa — H vs M */}
             {brechaEmpresa.length > 0 && (
               <ChartCard title="Salario Promedio H vs M por Empresa" span2>
@@ -738,25 +757,6 @@ export default function NominaPage() {
                   ]}
                   layout={{ barmode: "group", yaxis: { title: { text: "Salario Promedio (₲)" } }, margin: { t: 32, r: 16, b: 80, l: 80 }, showlegend: true }}
                   height={320}
-                />
-              </ChartCard>
-            )}
-
-            {/* Salario promedio por empresa (total) */}
-            {salEmp.length > 0 && (
-              <ChartCard title="Salario Promedio por Empresa">
-                <PlotChart
-                  light
-                  data={[{
-                    type: "bar",
-                    x: salEmp.map((r) => r.empresa),
-                    y: salEmp.map((r) => r.promedio),
-                    marker: { color: barColors(salEmp.length) },
-                    text: salEmp.map((r) => `₲${(r.promedio / 1_000_000).toFixed(1)}M`),
-                    textposition: "outside" as const,
-                  }]}
-                  layout={{ yaxis: { title: { text: "Salario Promedio (₲)" } }, margin: { t: 32, r: 16, b: 80, l: 80 } }}
-                  height={280}
                 />
               </ChartCard>
             )}
