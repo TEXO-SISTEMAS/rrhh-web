@@ -48,11 +48,7 @@ function agColors(n: number) {
 }
 
 // Color fijo por concepto (mismo orden que CONCEPTOS)
-const CONCEPT_COLORS = [
-  "#7C3AED","#059669","#0891B2","#D97706","#DC2626",
-  "#65A30D","#C2410C","#0F766E","#2563EB","#4338CA",
-  "#7C3AED","#64748b",
-];
+const CONCEPT_COLORS = LIGHT_COLOR_SEQ;
 
 const TABS = [
   { id: "agencia",      label: "Por Agencia",          icon: "🏢" },
@@ -489,7 +485,7 @@ export default function CostosPage() {
                     y: agSob.map((r) => r.SOBRECOSTO),
                     marker: {
                       color: agSob.map((r) => r.SOBRECOSTO),
-                      colorscale: [[0, "#fecaca"], [1, "#DC2626"]] as [number, string][],
+                      colorscale: [[0, "#fce7f3"], [1, "#f43f5e"]] as [number, string][],
                       showscale: false,
                     },
                   }]}
@@ -583,7 +579,7 @@ export default function CostosPage() {
                       y: nivSob.map((r) => r.sobrecosto),
                       marker: {
                         color: nivSob.map((r) => r.sobrecosto),
-                        colorscale: [[0, "#fecaca"], [1, "#DC2626"]] as [number, string][],
+                        colorscale: [[0, "#fce7f3"], [1, "#f43f5e"]] as [number, string][],
                         showscale: false,
                       },
                       text: nivSob.map((r) => fmtGs(r.sobrecosto)),
@@ -616,8 +612,8 @@ export default function CostosPage() {
                   <PlotChart
                     light
                     data={[
-                      { type: "bar", name: "Costo Total", x: nivComp.map((r) => r.nivel), y: nivComp.map((r) => r.total_costo), marker: { color: "#2563EB" } },
-                      { type: "bar", name: "Sobrecosto",  x: nivComp.map((r) => r.nivel), y: nivComp.map((r) => r.sobrecosto),  marker: { color: "#DC2626" } },
+                      { type: "bar", name: "Costo Total", x: nivComp.map((r) => r.nivel), y: nivComp.map((r) => r.total_costo), marker: { color: LIGHT_COLOR_SEQ[0] } },
+                      { type: "bar", name: "Sobrecosto",  x: nivComp.map((r) => r.nivel), y: nivComp.map((r) => r.sobrecosto),  marker: { color: LIGHT_COLOR_SEQ[1] } },
                     ]}
                     layout={{ barmode: "group", xaxis: { title: { text: "Nivel AIC" } }, yaxis: { title: { text: "Monto" } }, margin: { t: 8, r: 16, b: 48, l: 80 } }}
                     height={340}
@@ -638,7 +634,7 @@ export default function CostosPage() {
               <ChartCard title="Composición del Costo Total">
                 <PlotChart
                   light
-                  data={[{ type: "pie", labels: composicion.labels, values: composicion.values, hole: 0.4, textinfo: "label+percent", textposition: "outside", textfont: { color: "#1e293b" }, marker: { colors: composicion.colors } }]}
+                  data={[{ type: "pie", labels: composicion.labels, values: composicion.values, hole: 0.4, textinfo: "label+percent", textposition: "outside", textfont: { color: "var(--text)" }, marker: { colors: composicion.colors } }]}
                   layout={{ margin: { t: 16, r: 16, b: 16, l: 16 } }}
                   height={380}
                 />
