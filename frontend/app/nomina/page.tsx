@@ -45,10 +45,12 @@ function computeFromRows(rows: Row[]) {
   const total    = rows.length;
   const empresas = new Set(rows.map((r) => r.EMPRESA).filter(Boolean)).size;
 
-  const tipoNorm = (r: Row) => String(r.TIPO_EMPRESA ?? "").toUpperCase().trim();
-  const agencias = rows.filter((r) => tipoNorm(r) === "AGENCIA").length;
-  const tacMedia = rows.filter((r) => tipoNorm(r) === "TAC MEDIA").length;
-  const csc      = rows.filter((r) => tipoNorm(r) === "CSC").length;
+  const TAC_MEDIA_EMP = new Set(["AMPLIFY", "BPR", "TAC MEDIA"]);
+  const CSC_EMP       = new Set(["TEXO"]);
+  const empNorm = (r: Row) => String(r.EMPRESA ?? "").toUpperCase().trim();
+  const tacMedia = rows.filter((r) => TAC_MEDIA_EMP.has(empNorm(r))).length;
+  const csc      = rows.filter((r) => CSC_EMP.has(empNorm(r))).length;
+  const agencias = rows.filter((r) => !TAC_MEDIA_EMP.has(empNorm(r)) && !CSC_EMP.has(empNorm(r))).length;
 
   const mujeres     = rows.filter((r) => r.SEXO === "F").length;
   const salRows     = rows.filter((r) => r.SALARIO != null);
