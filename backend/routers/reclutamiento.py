@@ -61,7 +61,13 @@ def normalizar_reclutamiento(df_raw: pd.DataFrame) -> pd.DataFrame:
     # ── Limpiar columnas de texto ─────────────────────────────────────────────
     for col in COLS_TEXTO:
         if col in df.columns:
-            df[col] = df[col].astype(str).str.strip().str.upper().replace("NAN", np.nan)
+            df[col] = df[col].astype(str).str.strip().str.upper().replace({"NAN": np.nan, "": np.nan})
+
+    # Filtrar filas vacías — celdas vacías pueden ser NaN o string vacío
+    if "POSICION" in df.columns:
+        df = df[df["POSICION"].notna()].reset_index(drop=True)
+    elif "RECEPCION" in df.columns:
+        df = df.dropna(subset=["RECEPCION"]).reset_index(drop=True)
 
     # ── Fechas ────────────────────────────────────────────────────────────────
     for col in ["RECEPCION", "CIERRE"]:
@@ -391,3 +397,4 @@ async def procesar_reclutamiento(
     del df
     gc.collect()
     return JSONResponse(content=jsonable_encoder(result))
+
