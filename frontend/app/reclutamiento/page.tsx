@@ -53,6 +53,17 @@ function computeFromRows(rows: Row[]) {
   const diasProm   = diasRows.length ? Math.round(sumField(diasRows, "DIAS_CIERRE") / diasRows.length) : null;
   const candidatos = rows.reduce((a, r) => a + (Number(r.N_CANDIDATOS) || 0), 0);
 
+  const STATUS_ORDER = ["FILTRO DE CVS", "RECLUTAMIENTO", "ENTREVISTA 1", "ENTREVISTA 2", "DOCUMENTACION", "INGRESO"];
+  const statusMap = groupBy(rows.filter((r) => r.STATUS), "STATUS");
+  const statusDist = STATUS_ORDER
+    .filter((s) => statusMap[s])
+    .map((s) => ({ status: s, count: statusMap[s].length }))
+    .concat(
+      Object.entries(statusMap)
+        .filter(([s]) => !STATUS_ORDER.includes(s))
+        .map(([s, r]) => ({ status: s, count: r.length }))
+    );
+
   const kpis = {
     total_busquedas: total,
     abiertas,
@@ -130,7 +141,7 @@ function computeFromRows(rows: Row[]) {
     })
     .sort((a, b) => b.dias_promedio - a.dias_promedio);
 
-  return { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno, diasTipo };
+  return { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno, diasTipo, statusDist };
 }
 
 function barColors(n: number) {
@@ -211,7 +222,7 @@ export default function ReclutamientoPage() {
   const rawRows: Row[]  = (data.tabla as Row[]) ?? [];
   const rawYears = Array.from(new Set(rawRows.map((r) => String(r.ANO ?? r.ANO_EVALUACION ?? "")).filter(Boolean))).sort();
   const filteredRows    = applyFilters(rawRows, selected);
-  const { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno, diasTipo } =
+  const { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno, diasTipo, statusDist } =
     computeFromRows(filteredRows);
 
   // ── Comparación ───────────────────────────────────────────────────────────
@@ -366,39 +377,24 @@ export default function ReclutamientoPage() {
               />
             </ChartCard>
           )}
-          {/* Embudo de Reclutamiento */}
-          <div className="chart-card" style={{ gridColumn: "1 / -1" }}>
-            <h3 className="chart-title mb-4">Embudo de Reclutamiento</h3>
-            <div className="flex flex-col gap-3 pt-2">
-              {(() => {
-                const funnelData = [
-                  { label: "Candidatos recibidos", val: kpis.total_candidatos || 0, color: "#2563EB" },
-                  { label: "Preseleccionados", val: Math.round((kpis.total_candidatos || 0) * 0.4), color: "#7C3AED" },
-                  { label: "Entrevistas", val: Math.round((kpis.total_candidatos || 0) * 0.2), color: "#0891B2" },
-                  { label: "Ofertas enviadas", val: Math.round((kpis.total_candidatos || 0) * 0.05), color: "#D97706" },
-                  { label: "Contratados", val: kpis.cerradas || 0, color: "#059669" },
-                ].filter(f => f.val > 0);
-                const maxVal = Math.max(...funnelData.map(f => f.val), 1);
-                return funnelData.map(f => (
-                  <div key={f.label}>
-                    <div className="flex justify-between items-baseline mb-1">
-                      <span className="text-xs" style={{ color: "var(--text)" }}>{f.label}</span>
-                      <span className="text-sm font-bold" style={{ color: f.color }}>{f.val.toLocaleString()}</span>
-                    </div>
-                    <div className="h-3 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${(f.val / maxVal) * 100}%`,
-                          background: f.color,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
+          {/* Status de Búsquedas */}
+          {statusDist.length > 0 && (
+            <ChartCard title="Búsquedas por Status">
+              <PlotChart
+                light
+                data={[{
+                  type: "bar",
+                  x: statusDist.map((r) => r.status),
+                  y: statusDist.map((r) => r.count),
+                  marker: { color: barColors(statusDist.length) },
+                  text: statusDist.map((r) => String(r.count)),
+                  textposition: "outside",
+                }]}
+                layout={{ yaxis: { title: { text: "Búsquedas" } }, margin: { t: 32, r: 16, b: 80, l: 60 } }}
+                height={320}
+              />
+            </ChartCard>
+          )}
         </div>
       )}
 
