@@ -32,10 +32,9 @@ const TABS = [
   { id: "detalle",      label: "Detalle",          icon: "📋" },
 ];
 
-function defaultLatestYear(rows: Row[]): Record<string, string[]> {
-  const years = Array.from(new Set(rows.map((r) => String(r.ANO ?? "")).filter(Boolean))).sort();
-  const latest = years[years.length - 1];
-  return latest ? { ANO: [latest] } : {};
+// Reclutamiento muestra todos los años por defecto (análisis histórico)
+function defaultLatestYear(_rows: Row[]): Record<string, string[]> {
+  return {};
 }
 
 function isCerrada(r: Row) {
