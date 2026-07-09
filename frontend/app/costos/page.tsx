@@ -326,43 +326,90 @@ export default function CostosPage() {
 
   if (!data && !loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[72vh] gap-6">
-        <div className="text-center">
-          <p className="label-xs mb-2" style={{ color: "var(--accent)" }}>Módulo de Costos</p>
-          <h1 className="page-title">Análisis de Costos de Liquidaciones</h1>
-          <p className="mt-2 text-sm max-w-sm mx-auto" style={{ color: "var(--text2)" }}>
-            Subí uno o más archivos Excel de liquidaciones para analizar sobrecostos, composición de egresos y tendencias por agencia.
-          </p>
-        </div>
-        <div className="w-full max-w-md">
+      <>
+        {pendingFiles && (
           <div
-            onClick={() => inputRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-            className="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 cursor-pointer transition-colors select-none"
-            style={{
-              borderColor: dragging ? "var(--accent)" : "var(--border)",
-              background: dragging ? "rgba(124,90,246,0.08)" : "var(--card)",
-            }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: "rgba(0,0,0,0.65)" }}
+            onClick={(e) => { if (e.target === e.currentTarget) setPendingFiles(null); }}
           >
-            <svg className="w-10 h-10" style={{ color: dragging ? "var(--accent)" : "var(--text3)" }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0-3 3m3-3 3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.338-2.032A4.5 4.5 0 0 1 17.25 19.5H6.75Z" />
-            </svg>
-            <p className="text-sm text-center" style={{ color: "var(--text)" }}>Arrastrá los archivos Excel aquí o hacé clic para seleccionar</p>
-            <p className="text-xs" style={{ color: "var(--text3)" }}>Formatos: .xlsx .xls</p>
-            <input ref={inputRef} type="file" multiple accept=".xlsx,.xls" className="hidden" onChange={handleChange} />
-          </div>
-          {error && (
-            <div className="mt-4 flex items-start gap-2 rounded-lg px-4 py-3 text-sm" style={{ border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>
-              <svg className="mt-0.5 w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-              </svg>
-              <span>{error}</span>
+            <div className="w-full max-w-sm rounded-2xl p-6 space-y-5 shadow-2xl"
+              style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+              <div>
+                <p className="text-base font-semibold" style={{ color: "var(--text)" }}>
+                  ¿A qué año corresponde este archivo?
+                </p>
+                <p className="text-xs mt-1" style={{ color: "var(--text3)" }}>
+                  {pendingFiles.map((f) => f.name).join(", ")}
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-2" style={{ color: "var(--text2)" }}>Año</label>
+                <input
+                  autoFocus
+                  type="number"
+                  value={anoUpload}
+                  onChange={(e) => setAnoUpload(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") confirmUploadCostos(); if (e.key === "Escape") setPendingFiles(null); }}
+                  placeholder="2025"
+                  min={2000} max={2100}
+                  className="w-full rounded-lg px-4 py-3 text-lg font-semibold text-center tracking-widest"
+                  style={{ background: "var(--card2)", border: `1px solid ${anoUpload ? "var(--accent)" : "var(--border)"}`, color: "var(--text)", outline: "none" }}
+                />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setPendingFiles(null)}
+                  className="flex-1 rounded-lg py-2.5 text-sm font-medium"
+                  style={{ background: "var(--card2)", border: "1px solid var(--border)", color: "var(--text2)" }}>
+                  Cancelar
+                </button>
+                <button onClick={confirmUploadCostos} disabled={!anoUpload.trim()}
+                  className="flex-1 rounded-lg py-2.5 text-sm font-semibold disabled:opacity-40"
+                  style={{ background: "var(--accent)", color: "#fff" }}>
+                  Subir archivos
+                </button>
+              </div>
             </div>
-          )}
+          </div>
+        )}
+        <div className="flex flex-col items-center justify-center min-h-[72vh] gap-6">
+          <div className="text-center">
+            <p className="label-xs mb-2" style={{ color: "var(--accent)" }}>Módulo de Costos</p>
+            <h1 className="page-title">Análisis de Costos de Liquidaciones</h1>
+            <p className="mt-2 text-sm max-w-sm mx-auto" style={{ color: "var(--text2)" }}>
+              Subí uno o más archivos Excel de liquidaciones para analizar sobrecostos, composición de egresos y tendencias por agencia.
+            </p>
+          </div>
+          <div className="w-full max-w-md">
+            <div
+              onClick={() => inputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={handleDrop}
+              className="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 cursor-pointer transition-colors select-none"
+              style={{
+                borderColor: dragging ? "var(--accent)" : "var(--border)",
+                background: dragging ? "rgba(124,90,246,0.08)" : "var(--card)",
+              }}
+            >
+              <svg className="w-10 h-10" style={{ color: dragging ? "var(--accent)" : "var(--text3)" }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0-3 3m3-3 3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.338-2.032A4.5 4.5 0 0 1 17.25 19.5H6.75Z" />
+              </svg>
+              <p className="text-sm text-center" style={{ color: "var(--text)" }}>Arrastrá los archivos Excel aquí o hacé clic para seleccionar</p>
+              <p className="text-xs" style={{ color: "var(--text3)" }}>Formatos: .xlsx .xls</p>
+              <input ref={inputRef} type="file" multiple accept=".xlsx,.xls" className="hidden" onChange={handleChange} />
+            </div>
+            {error && (
+              <div className="mt-4 flex items-start gap-2 rounded-lg px-4 py-3 text-sm" style={{ border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>
+                <svg className="mt-0.5 w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                <span>{error}</span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
