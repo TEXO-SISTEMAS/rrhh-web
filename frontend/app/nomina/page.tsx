@@ -134,7 +134,7 @@ function computeFromRows(rows: Row[]) {
 
   const discapacidadRows = rows.filter((r) => {
     const v = String(r.DISCAPACIDAD ?? "").toUpperCase().trim();
-    return v === "SI" || v === "SÍ" || v === "YES" || v === "1" || v === "TRUE";
+    return v !== "" && v !== "NO" && v !== "NAN" && v !== "NONE" && v !== "0" && v !== "FALSE";
   });
   const discapacidad = {
     count: discapacidadRows.length,
