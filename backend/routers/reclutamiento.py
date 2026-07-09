@@ -85,10 +85,12 @@ def normalizar_reclutamiento(df_raw: pd.DataFrame) -> pd.DataFrame:
             lambda r: dias_habiles(r["RECEPCION"], r["CIERRE"] if pd.notnull(r.get("CIERRE")) else today),
             axis=1,
         )
-        df["DIAS_CIERRE"] = df.apply(
+        dias_calc = df.apply(
             lambda r: dias_habiles(r["RECEPCION"], r["CIERRE"]) if pd.notnull(r.get("CIERRE")) else None,
             axis=1,
         )
+        # Solo valores positivos (negativos = CIERRE anterior a RECEPCION, dato erróneo)
+        df["DIAS_CIERRE"] = dias_calc.where(dias_calc > 0, other=None)
 
     # ── AÑO y MES — siempre desde RECEPCION (la columna AÑO/MES del Excel ────────
     # puede contener fórmulas de texto como =GEMINI(...) en lugar de valores reales)
