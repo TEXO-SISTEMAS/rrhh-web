@@ -132,10 +132,14 @@ function computeFromRows(rows: Row[]) {
       .sort((a, b) => b.count - a.count);
   })();
 
+  const discapacidadRows = rows.filter((r) => {
+    const v = String(r.DISCAPACIDAD ?? "").toUpperCase().trim();
+    return v === "SI" || v === "SÍ" || v === "YES" || v === "1" || v === "TRUE";
+  });
   const discapacidad = {
-    count: 1,
-    pct: total > 0 ? (1 / total * 100).toFixed(1) : "0.0",
-    personas: [{ tipo: "Discapacidad Motora", empresa: "TEXO" }],
+    count: discapacidadRows.length,
+    pct: total > 0 ? (discapacidadRows.length / total * 100).toFixed(1) : "0.0",
+    personas: discapacidadRows.map((r) => ({ tipo: String(r.DISCAPACIDAD ?? "Sí"), empresa: String(r.EMPRESA ?? "") })),
   };
 
   const antiguedadRangos = (() => {
@@ -152,11 +156,17 @@ function computeFromRows(rows: Row[]) {
   })();
 
   const antiguedadPorTipo = (() => {
-    const m = groupBy(rows.filter((r) => r.TIPO_EMPRESA && r.ANTIGUEDAD_ANOS != null), "TIPO_EMPRESA");
-    return Object.entries(m).map(([tipo, r]) => ({
-      tipo: String(tipo),
-      promedio: Math.round(sumField(r, "ANTIGUEDAD_ANOS") / r.length * 10) / 10,
-    }));
+    const grupos: [string, (r: Row) => boolean][] = [
+      ["Agencias",  (r) => !TAC_MEDIA_EMP.has(empNorm(r)) && !CSC_EMP.has(empNorm(r))],
+      ["TAC Media", (r) => TAC_MEDIA_EMP.has(empNorm(r))],
+      ["CSC",       (r) => CSC_EMP.has(empNorm(r))],
+    ];
+    return grupos
+      .map(([tipo, fn]) => {
+        const r = rows.filter((x) => fn(x) && x.ANTIGUEDAD_ANOS != null);
+        return { tipo, promedio: r.length ? Math.round(sumField(r, "ANTIGUEDAD_ANOS") / r.length * 10) / 10 : null };
+      })
+      .filter((g) => g.promedio !== null) as { tipo: string; promedio: number }[];
   })();
 
   const brechaEmpresa = (() => {
