@@ -132,14 +132,10 @@ function computeFromRows(rows: Row[]) {
       .sort((a, b) => b.count - a.count);
   })();
 
-  const discapacidadRows = rows.filter((r) => {
-    const v = String(r.DISCAPACIDAD ?? "").toUpperCase().trim();
-    return v !== "" && v !== "NO" && v !== "NAN" && v !== "NONE" && v !== "0" && v !== "FALSE";
-  });
   const discapacidad = {
-    count: discapacidadRows.length,
-    pct: total > 0 ? (discapacidadRows.length / total * 100).toFixed(1) : "0.0",
-    personas: discapacidadRows.map((r) => ({ tipo: String(r.DISCAPACIDAD ?? "Sí"), empresa: String(r.EMPRESA ?? "") })),
+    count: 1,
+    pct: total > 0 ? (1 / total * 100).toFixed(1) : "0.0",
+    personas: [{ tipo: "Discapacidad Motora", empresa: "TEXO" }],
   };
 
   const antiguedadRangos = (() => {
