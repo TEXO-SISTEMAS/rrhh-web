@@ -435,7 +435,8 @@ function GraficosHolding({
 
   const ORDEN_GEN  = ["Baby Boomers", "Generación X", "Millennials", "Generación Z", "Otra"];
   const genDist    = ((nominaData?.generaciones as AnyObj)?.distribucion as AnyObj[]) ?? [];
-  const genSorted  = ORDEN_GEN.map(g => genDist.find(r => r.GENERACION === g)).filter(Boolean) as AnyObj[];
+  // Backend renombra GENERACION → Generacion (capitalize); soportar ambos
+  const genSorted  = ORDEN_GEN.map(g => genDist.find(r => (r.Generacion ?? r.GENERACION) === g)).filter(Boolean) as AnyObj[];
 
   const genEmp     = ((nominaData?.genero as AnyObj)?.por_empresa as AnyObj[]) ?? [];
 
@@ -566,7 +567,7 @@ function GraficosHolding({
                 <h3 className="chart-title">Brecha Generacional</h3>
                 <PlotChart height={260} data={[{
                   type: "bar",
-                  x: genSorted.map(r => String(r.GENERACION)),
+                  x: genSorted.map(r => String(r.Generacion ?? r.GENERACION)),
                   y: genSorted.map(r => Number(r.Cantidad ?? r.cantidad ?? 0)),
                   marker: { color: genSorted.map((_, i) => COLOR_SEQ[i % COLOR_SEQ.length]) },
                   text: genSorted.map(r => String(Number(r.Cantidad ?? r.cantidad ?? 0))),
