@@ -493,7 +493,7 @@ function GraficosHolding({
       mode: "lines+markers" as const,
       name: yr,
       x: rows.map(r => String(r.mes ?? r.mes_n)),
-      y: rows.map(r => +(Number(r.SOBRECOSTO ?? 0) / 1_000_000).toFixed(1)),
+      y: rows.map(r => +(Number(r.sobrecosto ?? r.SOBRECOSTO ?? 0) / 1_000_000).toFixed(1)),
       line: { color: COLOR_SEQ[i % COLOR_SEQ.length], width: 2 },
     };
   });
