@@ -420,6 +420,23 @@ export default function ReclutamientoPage() {
               <PlotChart light data={lineTraces} height={300} />
             </ChartCard>
           )}
+          {diasAno.length > 0 && (
+            <ChartCard title="Días Promedio de Cierre por Año">
+              <PlotChart
+                light
+                data={[{
+                  type: "bar",
+                  x: diasAno.map((r) => r.ANO),
+                  y: diasAno.map((r) => r.dias_promedio),
+                  marker: { color: barColors(diasAno.length) },
+                  text: diasAno.map((r) => `${r.dias_promedio}d`),
+                  textposition: "outside",
+                }]}
+                layout={{ yaxis: { title: { text: "Días" }, ticksuffix: "d" }, margin: { t: 32, r: 16, b: 48, l: 60 } }}
+                height={300}
+              />
+            </ChartCard>
+          )}
           {diasTipo.length > 0 && (
             <ChartCard title="Días Promedio por Tipo de Vacante">
               <PlotChart
