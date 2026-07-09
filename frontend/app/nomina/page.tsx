@@ -203,13 +203,14 @@ function ChartCard({ title, children, span2 = false }: { title: string; children
 
 
 export default function NominaPage() {
-  const { nominaData, setNominaData, hydrating } = useDashboard();
+  const { nominaData, setNominaData, clearNominaData, hydrating } = useDashboard();
   const { selected, register } = useFilter();
   const [mounted, setMounted] = useState(false);
   const [data, setData] = useState<AnyObj | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [replaceAll, setReplaceAll] = useState(false);
   const [tab, setTab] = useState("distribucion");
+  const [clearConfirm, setClearConfirm] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -234,6 +235,14 @@ export default function NominaPage() {
 
   function handleRefresh() {
     setShowUpload(true);
+  }
+
+  function handleClear() {
+    if (!clearConfirm) { setClearConfirm(true); return; }
+    clearNominaData();
+    setData(null);
+    setClearConfirm(false);
+    setShowUpload(false);
   }
 
   function handleResult(result: AnyObj) {
@@ -273,6 +282,7 @@ export default function NominaPage() {
   }
 
   const rawRows: Row[]  = (data.tabla as Row[]) ?? [];
+  const rawYears = Array.from(new Set(rawRows.map((r) => String(r.ANO_EVALUACION ?? "")).filter(Boolean))).sort();
   const filteredRows    = applyFilters(rawRows, selected);
   const { kpis, genero, genDist, lidFem, lidMasc, lidEmp, salEmp, brechaNivel, brechaEmpresa, salGlobal, nac, anillosGenero, extPorNac, discapacidad, antiguedadRangos, antiguedadPorTipo } =
     computeFromRows(filteredRows);
@@ -290,19 +300,35 @@ export default function NominaPage() {
 
   return (
     <div>
-      {/* Encabezado con botón actualizar */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Encabezado con botones */}
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
           <p className="label-xs" style={{ color: "var(--accent)" }}>Módulo de Nómina</p>
           <h1 className="page-title">Análisis de Colaboradores</h1>
+          {rawYears.length > 0 && (
+            <p className="text-xs mt-1" style={{ color: "var(--text2)" }}>
+              Años cargados: <span className="font-semibold" style={{ color: "var(--text)" }}>{rawYears.join(", ")}</span>
+            </p>
+          )}
         </div>
-        <button
-          onClick={handleRefresh}
-          className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg font-medium transition-all"
-          style={{ background: "var(--card2)", color: "var(--text2)", border: "1px solid var(--border)" }}
-        >
-          ↺ Actualizar datos
-        </button>
+        <div className="flex items-center gap-2">
+          {clearConfirm ? (
+            <>
+              <span className="text-xs" style={{ color: "var(--text2)" }}>¿Confirmar limpieza?</span>
+              <button onClick={handleClear} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: "#ef4444", color: "#fff" }}>Sí, limpiar</button>
+              <button onClick={() => setClearConfirm(false)} className="text-xs px-3 py-1.5 rounded-lg" style={{ background: "var(--card2)", color: "var(--text2)", border: "1px solid var(--border)" }}>Cancelar</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setClearConfirm(true)} className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg font-medium transition-all" style={{ background: "var(--card2)", color: "#ef4444", border: "1px solid var(--border)" }}>
+                🗑 Limpiar datos
+              </button>
+              <button onClick={handleRefresh} className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg font-medium transition-all" style={{ background: "var(--card2)", color: "var(--text2)", border: "1px solid var(--border)" }}>
+                ↺ Actualizar datos
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Panel actualizar datos */}

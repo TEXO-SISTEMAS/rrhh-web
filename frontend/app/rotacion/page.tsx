@@ -505,12 +505,13 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
 }
 
 export default function RotacionPage() {
-  const { rotacionData, setRotacionData, respuestasData, setRespuestasData, hydrating } = useDashboard();
+  const { rotacionData, setRotacionData, clearRotacionData, respuestasData, setRespuestasData, hydrating } = useDashboard();
   const { selected, register } = useFilter();
   const [data, setData]       = useState<AnyObj | null>(null);
   const [activeTab, setActiveTab] = useState("general");
   const [showUpload, setShowUpload] = useState(false);
   const [replaceAll, setReplaceAll] = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
   const [respData, setRespData]     = useState<AnyObj | null>(null);
   const [showRespUpload, setShowRespUpload] = useState(false);
 
@@ -566,6 +567,15 @@ export default function RotacionPage() {
     );
   }
 
+  function handleClear() {
+    if (!clearConfirm) { setClearConfirm(true); return; }
+    clearRotacionData();
+    setData(null);
+    setRespData(null);
+    setClearConfirm(false);
+    setShowUpload(false);
+  }
+
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[72vh] gap-6">
@@ -585,6 +595,7 @@ export default function RotacionPage() {
   }
 
   const rawRows: Row[]         = (data.raw_rows as Row[]) ?? [];
+  const rawYears = Array.from(new Set(rawRows.map((r) => String(r.ANO_REPORTE ?? "")).filter(Boolean))).sort();
   const filteredRows            = applyFilters(rawRows, selected);
   const advertencias: string[] = (data.advertencias as string[]) ?? [];
   const computed = computeFromRows(filteredRows);
@@ -671,20 +682,38 @@ export default function RotacionPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <div>
           <p className="label-xs mb-1" style={{ color: "var(--accent)" }}>Módulo de Rotación</p>
           <h1 className="page-title">Rotación de Personal</h1>
+          {rawYears.length > 0 && (
+            <p className="text-xs mt-1" style={{ color: "var(--text2)" }}>
+              Años cargados: <span className="font-semibold" style={{ color: "var(--text)" }}>{rawYears.join(", ")}</span>
+            </p>
+          )}
         </div>
-        <button
-          onClick={() => setShowUpload((v) => !v)}
-          className="rounded-lg px-4 py-2 text-sm font-medium transition-all"
-          style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text2)" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--accent)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text2)"; }}
-        >
-          Actualizar datos
-        </button>
+        <div className="flex items-center gap-2">
+          {clearConfirm ? (
+            <>
+              <span className="text-xs" style={{ color: "var(--text2)" }}>¿Confirmar limpieza?</span>
+              <button onClick={handleClear} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: "#ef4444", color: "#fff" }}>Sí, limpiar</button>
+              <button onClick={() => setClearConfirm(false)} className="text-xs px-3 py-1.5 rounded-lg" style={{ background: "var(--card2)", color: "var(--text2)", border: "1px solid var(--border)" }}>Cancelar</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setClearConfirm(true)} className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg font-medium transition-all" style={{ background: "var(--card2)", color: "#ef4444", border: "1px solid var(--border)" }}>
+                🗑 Limpiar datos
+              </button>
+              <button
+                onClick={() => setShowUpload((v) => !v)}
+                className="rounded-lg px-4 py-2 text-sm font-medium transition-all"
+                style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text2)" }}
+              >
+                Actualizar datos
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {showUpload && (

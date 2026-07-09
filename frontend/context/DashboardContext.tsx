@@ -31,11 +31,17 @@ function saveToStorage(key: string, data: unknown): void {
   } catch {}
 }
 
+function removeFromStorage(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {}
+}
+
 async function fetchFromCache(module: Module): Promise<Record<string, unknown> | null> {
   try {
     const res = await fetch(`${API_URL}/api/cache/${module}`);
     if (!res.ok) {
-      console.error(`[cache] GET ${module} → ${res.status}`);
+      console.error(`[cache] GET ${module} -> ${res.status}`);
       return null;
     }
     const { data } = await res.json();
@@ -58,9 +64,26 @@ function pushToCache(module: Module, data: Record<string, unknown>): void {
     body: JSON.stringify({ data }),
   })
     .then((res) => {
-      if (!res.ok) console.error(`[cache] PUT ${module} → ${res.status}`);
+      if (!res.ok) console.error(`[cache] PUT ${module} -> ${res.status}`);
     })
     .catch((err) => console.error(`[cache] PUT ${module} error:`, err));
+}
+
+function clearCache(module: Module): void {
+  const token = getToken();
+  if (!token) return;
+  fetch(`${API_URL}/api/cache/${module}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ data: null }),
+  })
+    .then((res) => {
+      if (!res.ok) console.error(`[cache] CLEAR ${module} -> ${res.status}`);
+    })
+    .catch((err) => console.error(`[cache] CLEAR ${module} error:`, err));
 }
 
 interface DashboardContextValue {
@@ -75,6 +98,10 @@ interface DashboardContextValue {
   setCostosData: (data: Record<string, unknown>) => void;
   setReclutamientoData: (data: Record<string, unknown>) => void;
   setRespuestasData: (data: Record<string, unknown>) => void;
+  clearNominaData: () => void;
+  clearRotacionData: () => void;
+  clearCostosData: () => void;
+  clearReclutamientoData: () => void;
 }
 
 const DashboardContext = createContext<DashboardContextValue | null>(null);
@@ -136,6 +163,30 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     pushToCache("respuestas", data);
   }
 
+  function clearNominaData() {
+    setNominaDataState(null);
+    removeFromStorage(STORAGE_KEYS.nomina);
+    clearCache("nomina");
+  }
+
+  function clearRotacionData() {
+    setRotacionDataState(null);
+    removeFromStorage(STORAGE_KEYS.rotacion);
+    clearCache("rotacion");
+  }
+
+  function clearCostosData() {
+    setCostosDataState(null);
+    removeFromStorage(STORAGE_KEYS.costos);
+    clearCache("costos");
+  }
+
+  function clearReclutamientoData() {
+    setReclutamientoDataState(null);
+    removeFromStorage(STORAGE_KEYS.reclutamiento);
+    clearCache("reclutamiento");
+  }
+
   return (
     <DashboardContext.Provider
       value={{
@@ -150,6 +201,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         setCostosData,
         setReclutamientoData,
         setRespuestasData,
+        clearNominaData,
+        clearRotacionData,
+        clearCostosData,
+        clearReclutamientoData,
       }}
     >
       {children}

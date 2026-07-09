@@ -147,12 +147,13 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
 }
 
 export default function ReclutamientoPage() {
-  const { reclutamientoData, setReclutamientoData, hydrating } = useDashboard();
+  const { reclutamientoData, setReclutamientoData, clearReclutamientoData, hydrating } = useDashboard();
   const { selected, register } = useFilter();
   const [data, setData]     = useState<AnyObj | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [tab, setTab]       = useState("general");
   const [replaceAll, setReplaceAll] = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
 
   useEffect(() => {
     if (reclutamientoData && !data) {
@@ -208,6 +209,7 @@ export default function ReclutamientoPage() {
   }
 
   const rawRows: Row[]  = (data.tabla as Row[]) ?? [];
+  const rawYears = Array.from(new Set(rawRows.map((r) => String(r.ANO ?? r.ANO_EVALUACION ?? "")).filter(Boolean))).sort();
   const filteredRows    = applyFilters(rawRows, selected);
   const { kpis, agBusc, agDias, canal, top15, tasaResp, lineTraces, diasAno, diasTipo } =
     computeFromRows(filteredRows);
@@ -223,23 +225,49 @@ export default function ReclutamientoPage() {
     [anosDisponiblesRec[2]]: "#f59e0b",
   };
 
+  function handleClear() {
+    if (!clearConfirm) { setClearConfirm(true); return; }
+    clearReclutamientoData();
+    setData(null);
+    setClearConfirm(false);
+    setShowUpload(false);
+  }
+
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <div>
           <p className="label-xs mb-1" style={{ color: "var(--accent)" }}>Módulo de Reclutamiento</p>
           <h1 className="page-title">Búsquedas de Personal</h1>
+          {rawYears.length > 0 && (
+            <p className="text-xs mt-1" style={{ color: "var(--text2)" }}>
+              Años cargados: <span className="font-semibold" style={{ color: "var(--text)" }}>{rawYears.join(", ")}</span>
+            </p>
+          )}
         </div>
-        <button
-          onClick={() => setShowUpload((v) => !v)}
-          className="rounded-lg px-4 py-2 text-sm font-medium transition-all"
-          style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text2)" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--accent)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text2)"; }}
-        >
-          Actualizar datos
-        </button>
+        <div className="flex items-center gap-2">
+          {clearConfirm ? (
+            <>
+              <span className="text-xs" style={{ color: "var(--text2)" }}>¿Confirmar limpieza?</span>
+              <button onClick={handleClear} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: "#ef4444", color: "#fff" }}>Sí, limpiar</button>
+              <button onClick={() => setClearConfirm(false)} className="text-xs px-3 py-1.5 rounded-lg" style={{ background: "var(--card2)", color: "var(--text2)", border: "1px solid var(--border)" }}>Cancelar</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setClearConfirm(true)} className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg font-medium transition-all" style={{ background: "var(--card2)", color: "#ef4444", border: "1px solid var(--border)" }}>
+                🗑 Limpiar datos
+              </button>
+              <button
+                onClick={() => setShowUpload((v) => !v)}
+                className="rounded-lg px-4 py-2 text-sm font-medium transition-all"
+                style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text2)" }}
+              >
+                Actualizar datos
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {showUpload && (

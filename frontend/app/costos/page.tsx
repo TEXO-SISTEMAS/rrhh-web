@@ -205,7 +205,7 @@ function UploadIllustration() {
 }
 
 export default function CostosPage() {
-  const { costosData, setCostosData, hydrating } = useDashboard();
+  const { costosData, setCostosData, clearCostosData, hydrating } = useDashboard();
   const { selected, register } = useFilter();
   const [data, setData]               = useState<AnyObj | null>(null);
   const [storedFiles, setStoredFiles] = useState<File[]>([]);
@@ -217,6 +217,7 @@ export default function CostosPage() {
   const [activeTab, setActiveTab]     = useState("agencia");
   const [showUpload, setShowUpload]   = useState(false);
   const [replaceAll, setReplaceAll]   = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
   const [anoUpload, setAnoUpload]     = useState("2025");
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -312,6 +313,17 @@ export default function CostosPage() {
     );
   }
 
+  function handleClear() {
+    if (!clearConfirm) { setClearConfirm(true); return; }
+    clearCostosData();
+    setData(null);
+    setStoredFiles([]);
+    setHojas([]);
+    setHojaActiva("");
+    setClearConfirm(false);
+    setShowUpload(false);
+  }
+
   if (!data && !loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[72vh] gap-6">
@@ -369,6 +381,7 @@ export default function CostosPage() {
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
   const rawRows: Row[]   = (data!.raw_rows as Row[]) ?? [];
+  const rawYears = Array.from(new Set(rawRows.map((r) => String(r.ANO_SALIDA ?? "")).filter(Boolean))).sort();
   const filteredRows     = applyFilters(rawRows, selected);
   const { kpis, agSob, agSobDesc, agCant, agProm, composicion, compPorAgencia, tipoData, tipoProm, top10motivo, nivCosto, nivCant, nivSob, nivProm, nivComp, sobAno, liqAno, sobMensual, costoMensual } =
     computeFromRows(filteredRows);
@@ -434,20 +447,38 @@ export default function CostosPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <div>
           <p className="label-xs mb-1" style={{ color: "var(--accent)" }}>Módulo de Costos</p>
           <h1 className="page-title">Costos de Liquidaciones</h1>
+          {rawYears.length > 0 && (
+            <p className="text-xs mt-1" style={{ color: "var(--text2)" }}>
+              Años cargados: <span className="font-semibold" style={{ color: "var(--text)" }}>{rawYears.join(", ")}</span>
+            </p>
+          )}
         </div>
-        <button
-          onClick={() => setShowUpload((v) => !v)}
-          className="rounded-lg px-4 py-2 text-sm font-medium transition-all"
-          style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text2)" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--accent)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text2)"; }}
-        >
-          Actualizar datos
-        </button>
+        <div className="flex items-center gap-2">
+          {clearConfirm ? (
+            <>
+              <span className="text-xs" style={{ color: "var(--text2)" }}>¿Confirmar limpieza?</span>
+              <button onClick={handleClear} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: "#ef4444", color: "#fff" }}>Sí, limpiar</button>
+              <button onClick={() => setClearConfirm(false)} className="text-xs px-3 py-1.5 rounded-lg" style={{ background: "var(--card2)", color: "var(--text2)", border: "1px solid var(--border)" }}>Cancelar</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setClearConfirm(true)} className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg font-medium transition-all" style={{ background: "var(--card2)", color: "#ef4444", border: "1px solid var(--border)" }}>
+                🗑 Limpiar datos
+              </button>
+              <button
+                onClick={() => setShowUpload((v) => !v)}
+                className="rounded-lg px-4 py-2 text-sm font-medium transition-all"
+                style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text2)" }}
+              >
+                Actualizar datos
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {showUpload && (
