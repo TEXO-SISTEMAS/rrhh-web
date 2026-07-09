@@ -448,7 +448,7 @@ export default function NominaPage() {
                       x: [a.hombres, a.mujeres],
                       marker: { color: LIGHT_COLOR_SEQ[i % LIGHT_COLOR_SEQ.length] },
                       text: [String(a.hombres), String(a.mujeres)],
-                      textposition: "inside" as const, insidetextanchor: "middle" as const,
+                      textposition: "outside" as const,
                     }))}
                   layout={{ barmode: "group", xaxis: { title: { text: "Cantidad" } } }}
                   height={280}
