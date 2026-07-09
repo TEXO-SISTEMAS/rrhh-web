@@ -53,6 +53,7 @@ const CONCEPT_COLORS = LIGHT_COLOR_SEQ;
 const TABS = [
   { id: "agencia",      label: "Por Agencia",          icon: "🏢" },
   { id: "composicion",  label: "Composición de Costos", icon: "🌿" },
+  { id: "tipo",         label: "Tipo / Motivo",         icon: "📊" },
   { id: "comparacion",  label: "Comparación",           icon: "⚖️" },
   { id: "detalle",      label: "Detalle",               icon: "📄" },
 ];
@@ -671,6 +672,60 @@ export default function CostosPage() {
       )}
 
       {/* ── Tab: Por Tipo / Motivo ────────────────────────────────────────── */}
+      {activeTab === "tipo" && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {tipoData && (
+              <ChartCard title="Sobrecosto por Tipo de Salida">
+                <PlotChart
+                  light
+                  data={[{ type: "pie", labels: tipoData.labels, values: tipoData.values, hole: 0.4, textinfo: "label+percent", textposition: "outside", textfont: { color: "var(--text)" }, marker: { colors: [LIGHT_COLOR_SEQ[0], LIGHT_COLOR_SEQ[1]] } }]}
+                  layout={{ margin: { t: 16, r: 16, b: 16, l: 16 } }}
+                  height={340}
+                />
+              </ChartCard>
+            )}
+            {tipoProm.length > 0 && (
+              <ChartCard title="Sobrecosto Promedio por Tipo de Salida">
+                <PlotChart
+                  light
+                  data={[{
+                    type: "bar",
+                    x: tipoProm.map((r) => r.tipo),
+                    y: tipoProm.map((r) => r.prom),
+                    marker: { color: agColors(tipoProm.length) },
+                    text: tipoProm.map((r) => fmtGs(r.prom)),
+                    textposition: "outside" as const,
+                  }]}
+                  layout={{ xaxis: { title: { text: "Tipo" } }, yaxis: { title: { text: "Sobrecosto Promedio" } }, margin: { t: 32, r: 16, b: 60, l: 80 } }}
+                  height={340}
+                />
+              </ChartCard>
+            )}
+          </div>
+          {top10motivo.length > 0 && (
+            <ChartCard title="Top 10 Motivos de Salida — Sobrecosto Total" fullWidth>
+              <PlotChart
+                light
+                data={[{
+                  type: "bar", orientation: "h",
+                  x: top10motivo.map((r) => r.sobrecosto),
+                  y: top10motivo.map((r) => r.motivo),
+                  marker: {
+                    color: top10motivo.map((r) => r.sobrecosto),
+                    colorscale: [[0, "#fce7f3"], [1, "#f43f5e"]] as [number, string][],
+                    showscale: false,
+                  },
+                  text: top10motivo.map((r) => fmtGs(r.sobrecosto)),
+                  textposition: "outside" as const,
+                }]}
+                layout={{ xaxis: { title: { text: "Sobrecosto" } }, yaxis: { autorange: "reversed" as const }, margin: { t: 8, r: 120, b: 48, l: 220 } }}
+                height={400}
+              />
+            </ChartCard>
+          )}
+        </div>
+      )}
 
       {/* ── Tab: Comparación ─────────────────────────────────────────────── */}
       {activeTab === "comparacion" && (
