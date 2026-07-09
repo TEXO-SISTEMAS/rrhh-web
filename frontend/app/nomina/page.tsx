@@ -518,6 +518,24 @@ export default function NominaPage() {
                 </ChartCard>
               ) : null;
             })()}
+            {/* % Líderes por Empresa */}
+            {lidEmp.length > 0 && (
+              <ChartCard title="% Líderes por Empresa">
+                <PlotChart
+                  light
+                  data={[{
+                    type: "bar",
+                    x: lidEmp.map((r) => r.EMPRESA),
+                    y: lidEmp.map((r) => r.pct_lideres),
+                    marker: { color: barColors(lidEmp.length) },
+                    text: lidEmp.map((r) => `${r.pct_lideres}%`),
+                    textposition: "outside",
+                  }]}
+                  layout={{ yaxis: { title: { text: "% Líderes" }, ticksuffix: "%" }, margin: { t: 32, r: 16, b: 80, l: 60 } }}
+                  height={280}
+                />
+              </ChartCard>
+            )}
           </div>
         </div>
       )}
