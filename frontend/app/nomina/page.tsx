@@ -187,7 +187,7 @@ function computeFromRows(rows: Row[]) {
       : 0,
   };
 
-  const ANILLOS = ["ANILLO 1", "ANILLO 2", "ANILLO 3"];
+  const ANILLOS = ["ANILLO 1", "ANILLO 2", "ANILLO 3", "ANILLO 4", "ANILLO 5", "ANILLO 6"];
   const anillosGenero = ANILLOS.map((anillo) => {
     const r = rows.filter((x) => String(x.SECCION ?? "").toUpperCase().trim() === anillo);
     return { anillo, mujeres: r.filter((x) => x.SEXO === "F").length, hombres: r.filter((x) => x.SEXO === "M").length };
@@ -439,32 +439,17 @@ export default function NominaPage() {
               <ChartCard title="Distribución por Anillos y Género">
                 <PlotChart
                   light
-                  data={[
-                    {
-                      name: "ANILLO 3", type: "bar", orientation: "h",
+                  data={anillosGenero
+                    .filter((a) => a.mujeres + a.hombres > 0)
+                    .reverse()
+                    .map((a, i) => ({
+                      name: a.anillo, type: "bar" as const, orientation: "h" as const,
                       y: ["HOMBRES", "MUJERES"],
-                      x: [anillosGenero[2].hombres, anillosGenero[2].mujeres],
-                      marker: { color: "#D97706" },
-                      text: [String(anillosGenero[2].hombres), String(anillosGenero[2].mujeres)],
-                      textposition: "inside", insidetextanchor: "middle",
-                    },
-                    {
-                      name: "ANILLO 2", type: "bar", orientation: "h",
-                      y: ["HOMBRES", "MUJERES"],
-                      x: [anillosGenero[1].hombres, anillosGenero[1].mujeres],
-                      marker: { color: "#2563EB" },
-                      text: [String(anillosGenero[1].hombres), String(anillosGenero[1].mujeres)],
-                      textposition: "inside", insidetextanchor: "middle",
-                    },
-                    {
-                      name: "ANILLO 1", type: "bar", orientation: "h",
-                      y: ["HOMBRES", "MUJERES"],
-                      x: [anillosGenero[0].hombres, anillosGenero[0].mujeres],
-                      marker: { color: "#059669" },
-                      text: [String(anillosGenero[0].hombres), String(anillosGenero[0].mujeres)],
-                      textposition: "inside", insidetextanchor: "middle",
-                    },
-                  ]}
+                      x: [a.hombres, a.mujeres],
+                      marker: { color: LIGHT_COLOR_SEQ[i % LIGHT_COLOR_SEQ.length] },
+                      text: [String(a.hombres), String(a.mujeres)],
+                      textposition: "inside" as const, insidetextanchor: "middle" as const,
+                    }))}
                   layout={{ barmode: "group", xaxis: { title: { text: "Cantidad" } } }}
                   height={280}
                 />
