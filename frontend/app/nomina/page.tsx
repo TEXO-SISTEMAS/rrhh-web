@@ -429,7 +429,7 @@ export default function NominaPage() {
                   type: "pie", labels: ["Mujeres", "Hombres"], values: [lidFem, lidMasc],
                   hole: 0.45, textinfo: "label+percent",
                   textposition: "outside", textfont: { color: "#1e293b" },
-                  marker: { colors: ["#7C3AED", "#2563EB"] },
+                  marker: { colors: ["#EC4899", "#2563EB"] },
                 }]}
                 layout={{ margin: { t: 16, r: 16, b: 16, l: 16 } }}
                 height={280}
