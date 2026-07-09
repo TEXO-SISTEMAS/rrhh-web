@@ -73,24 +73,17 @@ function computeFromRows(allRows: Row[]) {
     return { labels: Object.keys(m), values: Object.values(m).map((v) => v.length) };
   })();
 
-  const categorizarMotivo = (raw: string): string | null => {
-    const v = raw.trim().toUpperCase();
-    if (v === "RENUNCIA") return "Renuncia";
-    if (v.includes("DESPIDO INJUSTIFICADO")) return "Despido Injustificado";
-    if (v.includes("PRUEBA")) return "Término de Contrato de Prueba";
-    return null;
-  };
-
   const motOrig = (() => {
     const counts: Record<string, number> = {};
     for (const r of todasSalidas) {
       const raw = String(r.MOTIVO_SALIDA ?? "").trim();
       if (!raw || raw.toUpperCase() === "NAN") continue;
-      const cat = categorizarMotivo(raw);
-      if (!cat) continue;
-      counts[cat] = (counts[cat] ?? 0) + 1;
+      counts[raw] = (counts[raw] ?? 0) + 1;
     }
-    return Object.entries(counts).map(([motivo, cantidad]) => ({ motivo, cantidad })).sort((a, b) => b.cantidad - a.cantidad);
+    return Object.entries(counts)
+      .map(([motivo, cantidad]) => ({ motivo, cantidad }))
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .slice(0, 10);
   })();
 
   const tasaMensual = (() => {
@@ -149,11 +142,9 @@ function computeFromRows(allRows: Row[]) {
   const motivoEmp = (() => {
     const acc: Record<string, number> = {};
     for (const r of todasSalidas) {
-      const raw = String(r.MOTIVO_SALIDA ?? "").trim();
-      if (!raw || raw.toUpperCase() === "NAN") continue;
-      const cat = categorizarMotivo(raw);
-      if (!cat) continue;
-      const key = `${r.EMPRESA}||${cat}`;
+      const motivo = String(r.MOTIVO_SALIDA ?? "").trim();
+      if (!motivo || motivo.toUpperCase() === "NAN") continue;
+      const key = `${r.EMPRESA}||${motivo}`;
       acc[key] = (acc[key] ?? 0) + 1;
     }
     return Object.entries(acc).map(([k, n]) => { const [empresa, motivo] = k.split("||"); return { empresa, motivo, n }; });
@@ -623,16 +614,11 @@ export default function RotacionPage() {
 
   const motivosUnicos     = Array.from(new Set(motivoEmp.map((r) => r.motivo)));
   const empresasMotivo    = Array.from(new Set(motivoEmp.map((r) => r.empresa)));
-  const MOTIVO_COLOR: Record<string, string> = {
-    "Renuncia":                      "#f43f5e",
-    "Despido Injustificado":          "#f59e0b",
-    "Término de Contrato de Prueba":  "#6366f1",
-  };
-  const motivoEmpTraces   = motivosUnicos.map((motivo) => ({
+  const motivoEmpTraces   = motivosUnicos.map((motivo, i) => ({
     type: "bar" as const, name: motivo,
     x: empresasMotivo,
     y: empresasMotivo.map((emp) => motivoEmp.find((r) => r.empresa === emp && r.motivo === motivo)?.n ?? 0),
-    marker: { color: MOTIVO_COLOR[motivo] ?? C_GRAY },
+    marker: { color: LIGHT_COLOR_SEQ[i % LIGHT_COLOR_SEQ.length] },
   }));
 
   const tiposUnicosAno = Array.from(new Set(tipoAno.map((r) => r.tipo)));
@@ -777,7 +763,7 @@ export default function RotacionPage() {
                   data={[{ type: "bar", orientation: "h",
                     x: motOrig.map((r) => r.cantidad),
                     y: motOrig.map((r) => r.motivo),
-                    marker: { color: motOrig.map((r) => MOTIVO_COLOR[r.motivo] ?? C_GRAY) },
+                    marker: { color: motOrig.map((_, i) => LIGHT_COLOR_SEQ[i % LIGHT_COLOR_SEQ.length]) },
                     text: motOrig.map((r) => String(r.cantidad)),
                     textposition: "outside" }]}
                   layout={{
