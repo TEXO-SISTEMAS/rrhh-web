@@ -124,7 +124,7 @@ function buildNominaPayload(rows: AnyObj[]): AnyObj {
   };
 }
 
-function buildRotacionPayload(salidas: AnyObj[], hcTotal: number): AnyObj {
+function buildRotacionPayload(salidas: AnyObj[], hcTotal: number, hcPorEmpresa: Record<string, number> = {}): AnyObj {
   // salidas = raw_rows filtered by ANO_REPORTE + SITUACION=I
   const byEmp: Record<string, AnyObj[]> = {};
   salidas.forEach(r => { const e = String(r.EMPRESA ?? ""); (byEmp[e] ??= []).push(r); });
@@ -137,9 +137,11 @@ function buildRotacionPayload(salidas: AnyObj[], hcTotal: number): AnyObj {
              salidas_totales: salidas.length, permanencia_prom_meses: permProm },
     por_empresa: {
       salidas:    Object.entries(byEmp).map(([EMPRESA, r]) => ({ EMPRESA, salidas: r.length })),
-      tasa_anual: Object.entries(byEmp).map(([empresa, r]) => ({
-        empresa, tasa_anual: hcTotal > 0 ? +(r.length / hcTotal * 100).toFixed(1) : null,
-      })),
+      // Tasa por empresa: salidas_empresa / hc_empresa (no hc_total)
+      tasa_anual: Object.entries(byEmp).map(([empresa, r]) => {
+        const hcEmp = hcPorEmpresa[empresa] ?? 0;
+        return { empresa, tasa_anual: hcEmp > 0 ? +(r.length / hcEmp * 100).toFixed(1) : null };
+      }),
       permanencia: Object.entries(byEmp).map(([EMPRESA, r]) => {
         const v = r.filter(x => Number(x.MESES_PERMANENCIA) > 0);
         return { EMPRESA, meses_promedio: v.length
@@ -184,15 +186,17 @@ function buildResumenPayload(
   // Así los KPIs reflejan TODOS los datos cargados, no solo el último upload
   const nomTotal = Number((nominaData?.kpis as AnyObj)?.total ?? 0);
 
+  const nomKpisEmp = ((nominaData?.kpis as AnyObj)?.por_empresa as Record<string, number>) ?? {};
+
   if (year === "todos") {
     const nomRows  = (nominaData?.tabla    as AnyObj[]) ?? [];
     const rotAllRows = ((rotacionData?.raw_rows as AnyObj[]) ?? [])
       .filter(r => String(r.SITUACION).toUpperCase() === "I");
     const cosAllRows = (costosData?.raw_rows as AnyObj[]) ?? [];
     return {
-      nomina:        nominaData  ? buildNominaPayload(nomRows)                        : undefined,
-      rotacion:      rotacionData ? buildRotacionPayload(rotAllRows, nomTotal)        : undefined,
-      liquidaciones: costosData  ? buildCostosPayload(cosAllRows)                    : undefined,
+      nomina:        nominaData  ? buildNominaPayload(nomRows)                                  : undefined,
+      rotacion:      rotacionData ? buildRotacionPayload(rotAllRows, nomTotal, nomKpisEmp)      : undefined,
+      liquidaciones: costosData  ? buildCostosPayload(cosAllRows)                              : undefined,
       reclutamiento: reclutamientoData ?? undefined,
     };
   }
@@ -201,7 +205,7 @@ function buildResumenPayload(
   const rotRows = rotAll.filter(r => String(r.SITUACION).toUpperCase() === "I");
   const cosRows = ((costosData?.raw_rows   as AnyObj[]) ?? []).filter(r => Number(r.ANO_SALIDA)  === year);
 
-  const rotP = rotacionData ? buildRotacionPayload(rotRows, nomTotal) : undefined;
+  const rotP = rotacionData ? buildRotacionPayload(rotRows, nomTotal, nomKpisEmp) : undefined;
   const cosP = costosData   ? buildCostosPayload(cosRows)             : undefined;
 
   return { nomina: nomP, rotacion: rotP, liquidaciones: cosP,
@@ -1065,13 +1069,13 @@ export default function ResumenEjecutivoPage() {
               </div>
             </div>
             <div className="chart-card items-center text-center p-8">
-              <p className="label-xs">% Mujeres Líderes</p>
+              <p className="label-xs">% Líderes</p>
               <div className="text-6xl font-black leading-none mt-3" style={{ color: "#7C3AED", letterSpacing: "-2px" }}>
                 {kpisConsol.lider_pct != null ? `${kpisConsol.lider_pct.toFixed(0)}%` : "—"}
               </div>
             </div>
             <div className="chart-card items-center text-center p-8">
-              <p className="label-xs">Nómina Mensual</p>
+              <p className="label-xs">Costo Liquidaciones</p>
               <div className="text-6xl font-black leading-none mt-3" style={{ color: "#059669", letterSpacing: "-2px" }}>
                 {kpisConsol.costo_total != null ? `₲ ${(kpisConsol.costo_total / 1000000).toFixed(0)}M` : "—"}
               </div>
@@ -1117,13 +1121,9 @@ export default function ResumenEjecutivoPage() {
             <div className="chart-card" style={{ gap: 16 }}>
               <h3 className="chart-title">Indicadores Clave — Semáforo</h3>
               {[
-                { label: "Headcount vs Budget", pct: 97, color: "#10b981" },
-                { label: "Budget RRHH utilizado", pct: 78, color: "#10b981" },
                 { label: "Rotación vs objetivo (10%)",
                   pct: Math.min(Math.round((rotacionPct / 10) * 100), 100),
                   color: rotStatus === "green" ? "#10b981" : rotStatus === "orange" ? "#f59e0b" : "#ef4444" },
-                { label: "Tiempo a cobertura (obj. 15d)", pct: 83, color: "#f59e0b" },
-                { label: "Engagement score", pct: 74, color: "#f59e0b" },
               ].map(({ label, pct, color }) => (
                 <div key={label} className="flex flex-col gap-1">
                   <div className="flex justify-between">
